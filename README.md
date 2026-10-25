@@ -21,7 +21,7 @@ No network access of any kind. No reading of cookies, tokens, chats or anything 
 
 ## Download the preview
 
-Grab `Multipane-<version>-win-x64.zip` from the [latest release](https://github.com/ReactRuler/multipane/releases/latest), unzip it anywhere and run `Multipane.exe`. Needs Windows 10 or 11 and the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0). The build is not code-signed yet, so SmartScreen asks once; every release ships `SHA256SUMS.txt` and a GitHub build provenance attestation (`gh attestation verify <zip> --owner ReactRuler`) so you can check that the file is exactly what the workflow built from the tagged source.
+Grab `Multipane-<version>-win-x64.zip` from the [latest release](https://github.com/ReactRuler/multipane/releases/latest), unzip the single `Multipane.exe` into a folder of your own (for example `%LOCALAPPDATA%\Programs\Multipane`) and run it. It writes nothing beside itself: settings and names go to `%LOCALAPPDATA%\Multipane`, logs to `%LOCALAPPDATA%\Multipane\logs`. Needs Windows 10 or 11 and the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0). The build is not code-signed yet, so SmartScreen asks once; every release ships `SHA256SUMS.txt` and a GitHub build provenance attestation (`gh attestation verify <zip> --owner ReactRuler`) so you can check that the file is exactly what the workflow built from the tagged source.
 
 Or build it yourself:
 

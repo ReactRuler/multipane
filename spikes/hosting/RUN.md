@@ -1,5 +1,7 @@
 # Running the hosting spike
 
+**As a user:** download the zip from the latest release, unzip the single `Multipane.exe` into a folder of your own (for example `%LOCALAPPDATA%\Programs\Multipane`) and run it from there; pin it to Start or the taskbar if you like. It writes nothing beside itself: names, settings and layout go to `%LOCALAPPDATA%\Multipane`, logs to `%LOCALAPPDATA%\Multipane\logs` (the newest 7 are kept). It needs the .NET 8 Desktop Runtime. The `.pdb` next to a locally published exe is debug information and can be deleted.
+
 Throw-away tool for `docs/tech/02-hosting-spike-plan.md`. It hosts foreign windows in two panes with approach A (reparent) or B (owned top-level window) and logs every Win32 step.
 
 Build (needs the .NET 8 SDK or newer with the Windows Desktop workload):

@@ -179,7 +179,8 @@ public static class SelfTest
         finally
         {
             foreach (var d in dummies) { try { if (!d.HasExited) d.Kill(); } catch { /* spike: nothing to do */ } }
-            var path = Path.Combine(AppContext.BaseDirectory, $"selftest-{DateTime.Now:yyyyMMdd-HHmmss}.txt");
+            Directory.CreateDirectory(MainWindow.LogDir);
+            var path = Path.Combine(MainWindow.LogDir, $"selftest-{DateTime.Now:yyyyMMdd-HHmmss}.txt");
             var sb = new StringBuilder();
             sb.AppendLine($"Hosting spike self-test - {DateTime.Now:yyyy-MM-dd HH:mm} - {Environment.OSVersion} - DPI-aware per monitor v2 - targets: two dummy windows of this spike, never Claude");
             foreach (var c in checks) sb.AppendLine($"{(c.Pass ? "PASS" : "FAIL")}  {c.Name}  - {c.Detail}");

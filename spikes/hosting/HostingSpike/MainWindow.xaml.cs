@@ -59,7 +59,9 @@ public partial class MainWindow : Window
     private bool _restoreSession = true;
     private readonly DispatcherTimer _tick = new() { Interval = TimeSpan.FromSeconds(1) };
     private int _ticks;
-    private readonly string _logPath = Path.Combine(AppContext.BaseDirectory, $"spike-{DateTime.Now:yyyyMMdd-HHmmss}.log");
+    /// <summary>Logs live in the app's own data folder, never beside the exe, so the exe can sit anywhere. The newest 7 files are kept.</summary>
+    public static readonly string LogDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Multipane", "logs");
+    private readonly string _logPath = Path.Combine(LogDir, $"multipane-{DateTime.Now:yyyyMMdd-HHmmss}.log");
 
     public ObservableCollection<PaneView> PanesList { get; } = new();
     /// <summary>Tab items wrap the pane: an ItemsControl given UIElements would host them directly and parent them twice.</summary>
@@ -77,6 +79,12 @@ public partial class MainWindow : Window
         InitializeComponent();
         Tabs.ItemsSource = TabsList;
         _tick.Tick += OnTick;
+        try
+        {
+            Directory.CreateDirectory(LogDir);
+            foreach (var old in new DirectoryInfo(LogDir).GetFiles("multipane-*.log").OrderByDescending(f => f.LastWriteTimeUtc).Skip(6)) old.Delete();
+        }
+        catch { /* a missing log folder only loses the log */ }
     }
 
     public void LogLine(string s)
@@ -84,7 +92,7 @@ public partial class MainWindow : Window
         var line = $"{DateTime.Now:HH:mm:ss.fff} {s}";
         Log.AppendText(line + Environment.NewLine);
         Log.ScrollToEnd();
-        File.AppendAllText(_logPath, line + Environment.NewLine);
+        try { File.AppendAllText(_logPath, line + Environment.NewLine); } catch { /* read-only location: keep the in-app log only */ }
     }
 
     protected override void OnSourceInitialized(EventArgs e)

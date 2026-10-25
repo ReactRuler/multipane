@@ -26,14 +26,14 @@ jobs:
         run: |
           $exe = "spikes/hosting/HostingSpike/bin/Release/net8.0-windows/Multipane.exe"
           $p = Start-Process -FilePath $exe -ArgumentList "--selftest" -PassThru -Wait
-          Get-Content (Get-ChildItem "spikes/hosting/HostingSpike/bin/Release/net8.0-windows/selftest-*.txt" | Sort-Object LastWriteTime | Select-Object -Last 1).FullName
+          Get-Content (Get-ChildItem "$env:LOCALAPPDATA/Multipane/logs/selftest-*.txt" | Sort-Object LastWriteTime | Select-Object -Last 1).FullName
           exit $p.ExitCode
       - name: Keep the self-test report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: selftest
-          path: spikes/hosting/HostingSpike/bin/Release/net8.0-windows/selftest-*.txt
+          path: ~/AppData/Local/Multipane/logs/selftest-*.txt
           if-no-files-found: ignore
       - name: No network code, no personal data in the repo
         shell: pwsh

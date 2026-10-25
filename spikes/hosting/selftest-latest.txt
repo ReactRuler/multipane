@@ -1,39 +1,39 @@
-Hosting spike self-test - 2026-10-25 17:02 - Microsoft Windows NT 10.0.26300.0 - DPI-aware per monitor v2 - targets: two dummy windows of this spike, never Claude
-PASS  dummies appeared  - one=1D350650 two=1471060
+Hosting spike self-test - 2026-10-25 17:09 - Microsoft Windows NT 10.0.26300.0 - DPI-aware per monitor v2 - targets: two dummy windows of this spike, never Claude
+PASS  dummies appeared  - one=1120406 two=F507F6
 PASS  A: styles stripped  - style=0x56000000
-PASS  A: parent is pane 1  - parent=26FA02A0 pane=26FA02A0
+PASS  A: parent is pane 1  - parent=5607FA pane=5607FA
 PASS  B: styles stripped, still top-level  - style=0x16000000
-PASS  B: owner is host  - owner=5B910BF8 host=5B910BF8
+PASS  B: owner is host  - owner=43D90D64 host=43D90D64
 PASS  B: tool window style applied  - ex=0x00000080
-PASS  A: placed over pane 1  - window=(276,410 1206x1277) pane=(276,410 1206x1277)
-PASS  B: placed over pane 2  - window=(1496,410 1206x1277) pane=(1496,410 1206x1277)
-PASS  A: follows resize  - window=(276,410 1416x1382) pane=(276,410 1416x1382)
-PASS  B: follows resize  - window=(1706,410 1416x1382) pane=(1706,410 1416x1382)
-PASS  B: follows move  - window=(1916,410 1416x1382) pane=(1916,410 1416x1382)
+PASS  A: placed over pane 1  - window=(100,234 1206x1277) pane=(100,234 1206x1277)
+PASS  B: placed over pane 2  - window=(1320,234 1206x1277) pane=(1320,234 1206x1277)
+PASS  A: follows resize  - window=(100,234 1416x1382) pane=(100,234 1416x1382)
+PASS  B: follows resize  - window=(1530,234 1416x1382) pane=(1530,234 1416x1382)
+PASS  B: follows move  - window=(1740,234 1416x1382) pane=(1740,234 1416x1382)
 PASS  finding: DWM cloak across processes  - hr=0x80070005 cloaked=False (0x80070005 = refused; informational)
 PASS  B: hide  - via showwindow, visible=False
-PASS  B: show again, placed  - via showwindow, window=(1916,410 1416x1382) pane=(1916,410 1416x1382)
+PASS  B: show again, placed  - via showwindow, window=(1740,234 1416x1382) pane=(1740,234 1416x1382)
 PASS  A: hide  - via showwindow, visible=False
-PASS  A: show again, placed  - window=(486,410 1416x1382) pane=(486,410 1416x1382)
-PASS  B: can take foreground (informational)  - yes foreground=1471060 target=1471060
-PASS  B: snapped back after the window resized itself  - snaps=1 window=(1916,410 1416x1382) pane=(1916,410 1416x1382)
-PASS  A: snapped back after the window resized itself  - snaps=1 window=(486,410 1416x1382) pane=(486,410 1416x1382)
+PASS  A: show again, placed  - window=(310,234 1416x1382) pane=(310,234 1416x1382)
+PASS  B: can take foreground (informational)  - yes foreground=F507F6 target=F507F6
+PASS  B: snapped back after the window resized itself  - snaps=1 window=(1740,234 1416x1382) pane=(1740,234 1416x1382)
+PASS  A: snapped back after the window resized itself  - snaps=1 window=(310,234 1416x1382) pane=(310,234 1416x1382)
 PASS  B: hidden with the minimised host (owner rule)  - visible=False
-PASS  B: visible and placed after restore  - window=(1916,410 1416x1382) pane=(1916,410 1416x1382)
+PASS  B: visible and placed after restore  - window=(1740,234 1416x1382) pane=(1740,234 1416x1382)
 PASS  maximised: panes stay inside the work area (not under the taskbar)  - pane=(1447,146)-(2868,1704) work=(0,0)-(2880,1716)
 PASS  B: placed after maximise  - window=(1447,146 1421x1558) pane=(1447,146 1421x1558)
-PASS  move back: window two now in the first column  - window=(486,410 1416x1382) pane=(486,410 1416x1382)
-PASS  move forward: order restored  - window=(486,410 1416x1382) pane=(486,410 1416x1382)
+PASS  move back: window two now in the first column  - window=(310,234 1416x1382) pane=(310,234 1416x1382)
+PASS  move forward: order restored  - window=(310,234 1416x1382) pane=(310,234 1416x1382)
 PASS  tabs: one window visible  - visible=1
-PASS  columns again: both visible and placed  - window=(1916,410 1416x1382) pane=(1916,410 1416x1382)
+PASS  columns again: both visible and placed  - window=(1740,234 1416x1382) pane=(1740,234 1416x1382)
 PASS  A: released styles  - style=0x16CF0000 expected=0x16CF0000 parent=0
 PASS  B: released styles and owner  - style=0x16CF0000 ex=0x00040100 owner=0
-PASS  B: back at its original rectangle  - window=(308,308 1120x735) pane=(308,308 1120x735)
+PASS  B: back at its original rectangle  - window=(132,132 1120x735) pane=(132,132 1120x735)
 PASS  targets alive after release  - exited: False,False
 PASS  B: survives losing its owner  - owner cleared, window still there
-PASS  stubborn dummy appeared, maximised  - hwnd=FA50722 zoomed=True
+PASS  stubborn dummy appeared, maximised  - hwnd=1340FDC zoomed=True
 PASS  B: maximised window restored before hosting  - zoomed=False style=0x16000000
-PASS  B: size-clamping window still fills the pane  - window=(1916,410 1416x1382) pane=(1916,410 1416x1382)
+PASS  B: size-clamping window still fills the pane  - window=(1740,234 1416x1382) pane=(1740,234 1416x1382)
 PASS  finder: quick-entry-like window is not a main window  - candidates=0
 PASS  finder: a normal window is  - candidates=1
 PASS  finder: a hosted (frame-stripped) window still counts  - candidates=1
