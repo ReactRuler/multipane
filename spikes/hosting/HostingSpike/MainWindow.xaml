@@ -106,7 +106,7 @@
         <Rectangle Width="1" Height="16" Fill="{DynamicResource Stroke2}" Margin="6,0,2,0"/>
         <StackPanel Orientation="Horizontal" VerticalAlignment="Top" Height="40">
           <Button Style="{StaticResource CaptionButton}" Content="&#xE921;" Click="OnMinimize" ToolTip="Minimise"/>
-          <Button x:Name="MaxButton" Style="{StaticResource CaptionButton}" Content="&#xE922;" Click="OnMaximize" ToolTip="Maximise"/>
+          <Button x:Name="MaxButton" Style="{StaticResource CaptionButton}" Content="&#xE922;" Click="OnMaximize" ToolTip="Maximise · double-click the title bar. F11 for full screen"/>
           <Button Style="{StaticResource CloseButton}" Content="&#xE8BB;" Click="OnClose" ToolTip="Close"/>
         </StackPanel>
       </StackPanel>

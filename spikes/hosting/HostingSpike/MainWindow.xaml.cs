@@ -265,6 +265,8 @@ public partial class MainWindow : Window
         else if (ctrl && shift && e.Key == Key.M && PanesList.Count > 0) { _maximized = _maximized is null ? PanesList[_active] : null; Relayout(); e.Handled = true; }
         else if (ctrl && shift && e.Key == Key.H && PanesList.Count > 0) { var p = PanesList[_active]; p.IsHidden = true; p.SuspendWindow(true); Relayout(); e.Handled = true; }
         else if (ctrl && shift && e.Key == Key.A) { foreach (var p in PanesList) { p.IsHidden = false; p.SuspendWindow(false); } Relayout(); e.Handled = true; }
+        else if (e.Key == Key.F11) { ToggleFullscreen(); e.Handled = true; }
+        else if (e.Key == Key.Escape && _fullscreen) { ToggleFullscreen(); e.Handled = true; }
         else if (e.Key == Key.Escape && _maximized is not null) { _maximized = null; Relayout(); e.Handled = true; }
     }
 
@@ -605,6 +607,30 @@ public partial class MainWindow : Window
         MaxButton.ToolTip = WindowState == WindowState.Maximized ? "Restore" : "Maximise";
         foreach (var p in PanesList) if (p.Visibility == Visibility.Visible && !p.IsHidden) p.SuspendWindow(minimised);
         if (!minimised) Dispatcher.BeginInvoke(PlaceAll, DispatcherPriority.Loaded);
+    }
+
+    private bool _fullscreen;
+    private Rect _beforeFullscreen;
+
+    /// <summary>F11: cover the whole monitor, taskbar included. Again or Escape restores the previous bounds.</summary>
+    private void ToggleFullscreen()
+    {
+        if (!_fullscreen)
+        {
+            if (!NativeMethods.WorkAreaOf(Hwnd, out _, out var mon)) return;
+            _beforeFullscreen = WindowState == WindowState.Maximized ? Rect.Empty : new Rect(Left, Top, Width, Height);
+            WindowState = WindowState.Normal;
+            var dpi = VisualTreeHelper.GetDpi(this);
+            Left = mon.Left / dpi.DpiScaleX; Top = mon.Top / dpi.DpiScaleY; Width = mon.Width / dpi.DpiScaleX; Height = mon.Height / dpi.DpiScaleY;
+            Topmost = true; _fullscreen = true;
+        }
+        else
+        {
+            Topmost = false; _fullscreen = false;
+            if (_beforeFullscreen.IsEmpty) WindowState = WindowState.Maximized;
+            else { Left = _beforeFullscreen.Left; Top = _beforeFullscreen.Top; Width = _beforeFullscreen.Width; Height = _beforeFullscreen.Height; }
+        }
+        Dispatcher.BeginInvoke(PlaceAll, DispatcherPriority.Loaded);
     }
 
     private void OnMinimize(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
