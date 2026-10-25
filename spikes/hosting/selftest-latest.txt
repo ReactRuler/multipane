@@ -1,9 +1,9 @@
-Hosting spike self-test - 2026-10-25 16:50 - Microsoft Windows NT 10.0.26300.0 - DPI-aware per monitor v2 - targets: two dummy windows of this spike, never Claude
-PASS  dummies appeared  - one=380109B4 two=1415D6
+Hosting spike self-test - 2026-10-25 17:02 - Microsoft Windows NT 10.0.26300.0 - DPI-aware per monitor v2 - targets: two dummy windows of this spike, never Claude
+PASS  dummies appeared  - one=1D350650 two=1471060
 PASS  A: styles stripped  - style=0x56000000
-PASS  A: parent is pane 1  - parent=2C670B86 pane=2C670B86
+PASS  A: parent is pane 1  - parent=26FA02A0 pane=26FA02A0
 PASS  B: styles stripped, still top-level  - style=0x16000000
-PASS  B: owner is host  - owner=B4091C host=B4091C
+PASS  B: owner is host  - owner=5B910BF8 host=5B910BF8
 PASS  B: tool window style applied  - ex=0x00000080
 PASS  A: placed over pane 1  - window=(276,410 1206x1277) pane=(276,410 1206x1277)
 PASS  B: placed over pane 2  - window=(1496,410 1206x1277) pane=(1496,410 1206x1277)
@@ -14,24 +14,26 @@ PASS  finding: DWM cloak across processes  - hr=0x80070005 cloaked=False (0x8007
 PASS  B: hide  - via showwindow, visible=False
 PASS  B: show again, placed  - via showwindow, window=(1916,410 1416x1382) pane=(1916,410 1416x1382)
 PASS  A: hide  - via showwindow, visible=False
-PASS  A: show again, placed  - window=(722,428 1416x1382) pane=(722,428 1416x1382)
-FAIL  B: can take foreground  - foreground=B4091C target=1415D6
-PASS  B: snapped back after the window resized itself  - snaps=1 window=(2237,457 1416x1382) pane=(2237,457 1416x1382)
-PASS  A: snapped back after the window resized itself  - snaps=1 window=(807,457 1416x1382) pane=(807,457 1416x1382)
+PASS  A: show again, placed  - window=(486,410 1416x1382) pane=(486,410 1416x1382)
+PASS  B: can take foreground (informational)  - yes foreground=1471060 target=1471060
+PASS  B: snapped back after the window resized itself  - snaps=1 window=(1916,410 1416x1382) pane=(1916,410 1416x1382)
+PASS  A: snapped back after the window resized itself  - snaps=1 window=(486,410 1416x1382) pane=(486,410 1416x1382)
 PASS  B: hidden with the minimised host (owner rule)  - visible=False
-PASS  B: visible and placed after restore  - window=(2237,457 1416x1382) pane=(2237,457 1416x1382)
+PASS  B: visible and placed after restore  - window=(1916,410 1416x1382) pane=(1916,410 1416x1382)
 PASS  maximised: panes stay inside the work area (not under the taskbar)  - pane=(1447,146)-(2868,1704) work=(0,0)-(2880,1716)
 PASS  B: placed after maximise  - window=(1447,146 1421x1558) pane=(1447,146 1421x1558)
+PASS  move back: window two now in the first column  - window=(486,410 1416x1382) pane=(486,410 1416x1382)
+PASS  move forward: order restored  - window=(486,410 1416x1382) pane=(486,410 1416x1382)
 PASS  tabs: one window visible  - visible=1
-PASS  columns again: both visible and placed  - window=(2237,457 1416x1382) pane=(2237,457 1416x1382)
+PASS  columns again: both visible and placed  - window=(1916,410 1416x1382) pane=(1916,410 1416x1382)
 PASS  A: released styles  - style=0x16CF0000 expected=0x16CF0000 parent=0
 PASS  B: released styles and owner  - style=0x16CF0000 ex=0x00040100 owner=0
-PASS  B: back at its original rectangle  - window=(352,352 1120x735) pane=(352,352 1120x735)
+PASS  B: back at its original rectangle  - window=(308,308 1120x735) pane=(308,308 1120x735)
 PASS  targets alive after release  - exited: False,False
 PASS  B: survives losing its owner  - owner cleared, window still there
-PASS  stubborn dummy appeared, maximised  - hwnd=18900CE2 zoomed=True
+PASS  stubborn dummy appeared, maximised  - hwnd=FA50722 zoomed=True
 PASS  B: maximised window restored before hosting  - zoomed=False style=0x16000000
-PASS  B: size-clamping window still fills the pane  - window=(2237,457 1416x1382) pane=(2237,457 1416x1382)
+PASS  B: size-clamping window still fills the pane  - window=(1916,410 1416x1382) pane=(1916,410 1416x1382)
 PASS  finder: quick-entry-like window is not a main window  - candidates=0
 PASS  finder: a normal window is  - candidates=1
 PASS  finder: a hosted (frame-stripped) window still counts  - candidates=1
@@ -40,4 +42,4 @@ PASS  release restores a standard frame on it  - style=0x16CF0000
 PASS  layout: grid 3 = 2 + 1 full width  - cols=2 rows=2 last span=2
 PASS  layout: grid 5 = 3 + 2 at 1.5 cells  - units=6 first span=2 last span=3
 PASS  layout: focus 4 = main spanning 3 rows + strip  - rows=3 main span=3
-40 passed, 1 failed
+43 passed, 0 failed

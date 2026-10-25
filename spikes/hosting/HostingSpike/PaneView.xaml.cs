@@ -23,6 +23,8 @@ public partial class PaneView : UserControl, INotifyPropertyChanged
     public event Action<PaneView>? IdentityChanged;
     /// <summary>The pane knows its profile and the user pressed Start.</summary>
     public event Action<PaneView>? StartRequested;
+    /// <summary>Move this pane one slot back (-1) or forward (+1) in the arrangement.</summary>
+    public event Action<PaneView, int>? MoveRequested;
     /// <summary>Profile behind this pane, when known (restored session or opened from the home page).</summary>
     public string? ProfileId { get; set; }
     public event Action<PaneView>? Changed;
@@ -225,6 +227,8 @@ public partial class PaneView : UserControl, INotifyPropertyChanged
     private void OnBringForward(object sender, RoutedEventArgs e) { if (_target != IntPtr.Zero) NativeMethods.SetForegroundWindow(_target); }
     private void OnRemove(object sender, RoutedEventArgs e) => RemoveRequested?.Invoke(this);
     private void OnKill(object sender, RoutedEventArgs e) { if (_target != IntPtr.Zero) KillRequested?.Invoke(this); }
+    private void OnMoveBack(object sender, RoutedEventArgs e) => MoveRequested?.Invoke(this, -1);
+    private void OnMoveForward(object sender, RoutedEventArgs e) => MoveRequested?.Invoke(this, +1);
     private void OnPrimaryAction(object sender, RoutedEventArgs e)
     {
         if (State == PaneState.PoppedOut) DockBack();

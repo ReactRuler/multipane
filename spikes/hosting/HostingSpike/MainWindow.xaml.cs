@@ -133,6 +133,7 @@ public partial class MainWindow : Window
         };
         pane.RemoveRequested += p => { p.Release(); PanesList.Remove(p); TabsList.Remove(TabsList.First(t => t.Pane == p)); if (_maximized == p) _maximized = null; Relayout(); SaveLayout(); };
         pane.StartRequested += p => _ = StartIntoPaneAsync(p);
+        pane.MoveRequested += MovePane;
         pane.KillRequested += async p =>
         {
             NativeMethods.GetWindowThreadProcessId(p.TargetHwnd, out var pid);
@@ -161,6 +162,24 @@ public partial class MainWindow : Window
         Relayout();
         SaveLayout();
         return pane;
+    }
+
+    /// <summary>Swap the pane with its visible neighbour in the given direction; the order is what the arrangement follows.</summary>
+    public void MovePane(PaneView pane, int delta)
+    {
+        var visible = PanesList.Where(p => !p.IsHidden).ToList();
+        var vi = visible.IndexOf(pane);
+        if (vi < 0 || vi + delta < 0 || vi + delta >= visible.Count) return;
+        var other = visible[vi + delta];
+        var a = PanesList.IndexOf(pane); var b = PanesList.IndexOf(other);
+        (PanesList[a], PanesList[b]) = (PanesList[b], PanesList[a]);
+        var ta = TabsList.First(t => t.Pane == pane); var tb = TabsList.First(t => t.Pane == other);
+        var ia = TabsList.IndexOf(ta); var ib = TabsList.IndexOf(tb);
+        (TabsList[ia], TabsList[ib]) = (TabsList[ib], TabsList[ia]);
+        if (_active == a) _active = b; else if (_active == b) _active = a;
+        if (_focus == a) _focus = b; else if (_focus == b) _focus = a;
+        Relayout();
+        SaveLayout();
     }
 
     // ----- session: remember which profiles were open, dock them again at the next start -----
@@ -347,6 +366,8 @@ public partial class MainWindow : Window
         else if (ctrl && !shift && e.Key == Key.H) { ToggleHome(); e.Handled = true; }
         else if (e.Key == Key.Escape && _homeOpen && PanesList.Any(p => !p.IsHidden)) { ToggleHome(); e.Handled = true; }
         else if (ctrl && shift && e.Key == Key.M && PanesList.Count > 0) { _maximized = _maximized is null ? PanesList[_active] : null; Relayout(); e.Handled = true; }
+        else if (ctrl && shift && (e.Key is Key.Left or Key.Up) && PanesList.Count > 0) { MovePane(PanesList[Math.Clamp(_active, 0, PanesList.Count - 1)], -1); e.Handled = true; }
+        else if (ctrl && shift && (e.Key is Key.Right or Key.Down) && PanesList.Count > 0) { MovePane(PanesList[Math.Clamp(_active, 0, PanesList.Count - 1)], +1); e.Handled = true; }
         else if (ctrl && shift && e.Key == Key.H && PanesList.Count > 0) { var p = PanesList[_active]; p.IsHidden = true; p.SuspendWindow(true); Relayout(); e.Handled = true; }
         else if (ctrl && shift && e.Key == Key.A) { foreach (var p in PanesList) { p.IsHidden = false; p.SuspendWindow(false); } Relayout(); e.Handled = true; }
         else if (e.Key == Key.F11) { ToggleFullscreen(); e.Handled = true; }

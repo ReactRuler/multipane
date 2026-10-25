@@ -91,6 +91,12 @@ public static class SelfTest
             Add("B: placed after maximise", RectMatches(two, win.Panes[1].ScreenRect()), Describe(two, win.Panes[1].ScreenRect()));
             win.WindowState = WindowState.Normal; await Task.Delay(600);
 
+            // Reorder: moving pane 2 back swaps the two columns; the windows follow their panes.
+            win.MovePane(win.PanesList[1], -1); await Task.Delay(500);
+            Add("move back: window two now in the first column", RectMatches(two, win.Panes[0].ScreenRect()) && RectMatches(one, win.Panes[1].ScreenRect()), Describe(two, win.Panes[0].ScreenRect()));
+            win.MovePane(win.PanesList[0], +1); await Task.Delay(500);
+            Add("move forward: order restored", RectMatches(one, win.Panes[0].ScreenRect()) && RectMatches(two, win.Panes[1].ScreenRect()), Describe(one, win.Panes[0].ScreenRect()));
+
             // Tabs mode: exactly one of the two hosted windows visible, placed over the pane; switching back shows both. (A crash lived here.)
             win.ApplyMode(LayoutMode.Tabs); await Task.Delay(500);
             var visibleCount = (IsWindowVisible(one) ? 1 : 0) + (IsWindowVisible(two) ? 1 : 0);
