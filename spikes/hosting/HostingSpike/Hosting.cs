@@ -78,6 +78,7 @@ public sealed class HostedWindow
         // Apply the frame change; the caller places it right after.
         SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | 0x0001 | 0x0002); // NOMOVE|NOSIZE
         log($"after attach style=0x{Style(hwnd):X8} ex=0x{ExStyle(hwnd):X8} parent={GetParent(hwnd):X} owner={GetWindowLongPtr(hwnd, GWLP_HWNDPARENT):X}");
+        ClaudeFinder.KnownHosted.Add(hwnd);
         return new HostedWindow(hwnd, mode, hostHwnd, paneHwnd, before, toolWindowStyle);
     }
 
@@ -143,6 +144,7 @@ public sealed class HostedWindow
     {
         if (_released) return;
         _released = true;
+        ClaudeFinder.KnownHosted.Remove(Hwnd);
         if (_hook != IntPtr.Zero) { UnhookWinEvent(_hook); _hook = IntPtr.Zero; _hookProc = null; }
         if (SnapCount > 0) log($"release {Hwnd:X}: snapped back {SnapCount} times after the window moved or resized itself");
         if (!IsWindow(Hwnd)) { log($"release {Hwnd:X}: window gone"); return; }

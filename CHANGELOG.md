@@ -3,6 +3,7 @@
 ## v0.1.0-preview.2 (2026-10-25)
 
 - Fixed: switching to Tabs crashed the app.
+- Fixed: Claude's hidden quick-entry bar could be taken for the main window and hosted instead of it; only a resizable, maximisable window (or one already hosted) counts now.
 - Fixed: a maximised window ran under the taskbar.
 - Fixed: profile names and colours from the Claude Profile Switcher were not read.
 - New: the last session is restored at start; running profiles are docked again, hidden windows revealed, others wait with a Start button that docks the window when it appears.

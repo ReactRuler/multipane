@@ -127,6 +127,21 @@ public static class SelfTest
                 win.ClearHosted(1);
             }
 
+            // A quick-entry-like window (not resizable, not maximisable) must never be taken for a main window; a hosted one still must.
+            dummies.Add(Process.Start(exe, "--dummy Bar"));
+            var bar = await WaitForWindowAsync("Dummy Bar");
+            if (bar != IntPtr.Zero)
+            {
+                GetWindowThreadProcessId(bar, out var barPid);
+                GetWindowThreadProcessId(one, out var onePid);
+                Add("finder: quick-entry-like window is not a main window", ClaudeFinder.MainWindows(barPid, null).Count == 0, $"candidates={ClaudeFinder.MainWindows(barPid, null).Count}");
+                Add("finder: a normal window is", ClaudeFinder.MainWindows(onePid, null).Count == 1, $"candidates={ClaudeFinder.MainWindows(onePid, null).Count}");
+                var hOne = win.Host(one, 0, HostMode.B_Owned)!;
+                await Task.Delay(300);
+                Add("finder: a hosted (frame-stripped) window still counts", ClaudeFinder.MainWindows(onePid, null).Count == 1, $"candidates={ClaudeFinder.MainWindows(onePid, null).Count}");
+                hOne.Release(win.LogLine); win.ClearHosted(0);
+            }
+
             // Layout engine shapes, pure maths.
             var g3 = LayoutEngine.Plan(LayoutMode.Grid, 3, 0, 0);
             var g5 = LayoutEngine.Plan(LayoutMode.Grid, 5, 0, 0);

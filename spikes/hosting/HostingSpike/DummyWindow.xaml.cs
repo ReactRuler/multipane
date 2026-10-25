@@ -18,6 +18,8 @@ public partial class DummyWindow : Window
             WindowState = WindowState.Maximized;
             SourceInitialized += (_, _) => System.Windows.Interop.HwndSource.FromHwnd(new System.Windows.Interop.WindowInteropHelper(this).Handle)!.AddHook(StubbornHook);
         }
+        // "Bar" imitates Claude's quick-entry window: same class family, titled, but not resizable or maximisable.
+        if (name == "Bar") { ResizeMode = ResizeMode.NoResize; Width = 640; Height = 80; }
         // Every dummy answers WM_APP+1 by resizing itself, the way a user dragging Electron's own resize edge would.
         SourceInitialized += (_, _) => System.Windows.Interop.HwndSource.FromHwnd(new System.Windows.Interop.WindowInteropHelper(this).Handle)!.AddHook(SelfResizeHook);
     }

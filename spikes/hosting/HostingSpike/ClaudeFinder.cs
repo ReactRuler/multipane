@@ -87,45 +87,53 @@ public static class ClaudeFinder
         return result;
     }
 
-    /// <summary>Top-level, visible (or cloaked), unowned, non-tool windows of a process. For Claude the class is Chrome_WidgetWin_1.</summary>
-    public static List<TopWindow> MainWindows(uint pid, string? requiredClass)
+    /// <summary>Windows the host has stripped the frame from; they still count as main windows.</summary>
+    public static readonly HashSet<IntPtr> KnownHosted = new();
+
+    /// <summary>
+    /// A Claude instance has more than one Chrome_WidgetWin_1 window: the main window and the hidden quick-entry bar.
+    /// Only a resizable, maximisable top-level window (or one we already host) is a main window; the largest wins.
+    /// </summary>
+    private static bool IsMainCandidate(IntPtr h, uint pid, string? requiredClass, bool wantVisible, out TopWindow? w)
     {
-        var list = new List<TopWindow>();
-        NativeMethods.EnumWindows((h, _) =>
-        {
-            NativeMethods.GetWindowThreadProcessId(h, out var wp);
-            if (wp != pid) return true;
-            if (!NativeMethods.IsWindowVisible(h) && !NativeMethods.IsCloaked(h)) return true;
-            if (NativeMethods.GetWindow(h, NativeMethods.GW_OWNER) != IntPtr.Zero) return true;
-            if ((NativeMethods.ExStyle(h) & NativeMethods.WS_EX_TOOLWINDOW) != 0) return true;
-            var cls = NativeMethods.ClassName(h);
-            if (requiredClass is not null && cls != requiredClass) return true;
-            var title = NativeMethods.Title(h);
-            if (title.Length == 0) return true;
-            list.Add(new TopWindow(h, pid, cls, title));
-            return true;
-        }, IntPtr.Zero);
-        return list;
+        w = null;
+        NativeMethods.GetWindowThreadProcessId(h, out var wp);
+        if (wp != pid) return false;
+        var visible = NativeMethods.IsWindowVisible(h) || NativeMethods.IsCloaked(h);
+        if (visible != wantVisible) return false;
+        var hosted = KnownHosted.Contains(h); // owned by us and frame-stripped, yet still the main window
+        if (!hosted && NativeMethods.GetWindow(h, NativeMethods.GW_OWNER) != IntPtr.Zero) return false;
+        var cls = NativeMethods.ClassName(h);
+        if (requiredClass is not null && cls != requiredClass) return false;
+        var title = NativeMethods.Title(h);
+        if (title.Length == 0) return false;
+        var style = NativeMethods.Style(h);
+        const uint mainStyle = NativeMethods.WS_THICKFRAME | NativeMethods.WS_MAXIMIZEBOX;
+        if ((style & mainStyle) != mainStyle && !hosted) return false;
+        w = new TopWindow(h, pid, cls, title);
+        return true;
     }
 
-    /// <summary>Top-level windows of a process including hidden ones (a Claude instance that quit to the tray keeps its window, hidden).</summary>
-    public static List<TopWindow> HiddenMainWindows(uint pid, string? requiredClass)
+    private static List<TopWindow> Candidates(uint pid, string? requiredClass, bool visible)
     {
-        var list = new List<TopWindow>();
+        var list = new List<(TopWindow w, long area)>();
         NativeMethods.EnumWindows((h, _) =>
         {
-            NativeMethods.GetWindowThreadProcessId(h, out var wp);
-            if (wp != pid || NativeMethods.IsWindowVisible(h)) return true;
-            if (NativeMethods.GetWindow(h, NativeMethods.GW_OWNER) != IntPtr.Zero) return true;
-            var cls = NativeMethods.ClassName(h);
-            if (requiredClass is not null && cls != requiredClass) return true;
-            var title = NativeMethods.Title(h);
-            if (title.Length == 0) return true;
-            list.Add(new TopWindow(h, pid, cls, title));
+            if (IsMainCandidate(h, pid, requiredClass, visible, out var w) && w is not null)
+            {
+                NativeMethods.GetWindowRect(h, out var r);
+                list.Add((w, (long)Math.Max(r.Width, 1) * Math.Max(r.Height, 1)));
+            }
             return true;
         }, IntPtr.Zero);
-        return list;
+        return list.OrderByDescending(x => x.area).Select(x => x.w).ToList();
     }
+
+    /// <summary>Visible main windows of a process, largest first. For Claude the class is Chrome_WidgetWin_1.</summary>
+    public static List<TopWindow> MainWindows(uint pid, string? requiredClass) => Candidates(pid, requiredClass, visible: true);
+
+    /// <summary>Hidden main windows of a process (an instance that quit to the tray keeps its main window, hidden). The quick-entry bar is excluded.</summary>
+    public static List<TopWindow> HiddenMainWindows(uint pid, string? requiredClass) => Candidates(pid, requiredClass, visible: false);
 
     public static List<TopWindow> AllTopWindows()
     {
