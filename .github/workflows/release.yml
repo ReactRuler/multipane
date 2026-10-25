@@ -27,7 +27,9 @@ jobs:
             dotnet publish spikes/hosting/HostingSpike -c Release -r $rid --self-contained false -p:PublishSingleFile=true -p:Version=$v -o "out/$rid" -nologo
             Compress-Archive -Path "out/$rid/Multipane.exe" -DestinationPath "out/Multipane-$v-$rid.zip"
           }
-          Get-ChildItem out/*.zip | ForEach-Object { "$((Get-FileHash $_ -Algorithm SHA256).Hash.ToLower())  $($_.Name)" } | Set-Content out/SHA256SUMS.txt
+          # LF line endings so `sha256sum -c` on any platform parses the file.
+          $lines = Get-ChildItem out/*.zip | ForEach-Object { "$((Get-FileHash $_ -Algorithm SHA256).Hash.ToLower())  $($_.Name)" }
+          [IO.File]::WriteAllText("$PWD/out/SHA256SUMS.txt", ($lines -join "`n") + "`n")
           Get-Content out/SHA256SUMS.txt
       - name: Build provenance attestation
         uses: actions/attest-build-provenance@v2
