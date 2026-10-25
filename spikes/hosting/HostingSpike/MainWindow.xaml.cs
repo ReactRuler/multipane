@@ -130,7 +130,7 @@ public partial class MainWindow : Window
         pane.IdentityChanged += p =>
         {
             // Keep a pane's rename or colour change: find the profile behind its window and save it where the home page reads it.
-            if (p.TargetHwnd == IntPtr.Zero || _catalog is null) return;
+            if (p.TargetHwnd == IntPtr.Zero || _catalog is null || DemoProfiles is not null) return;
             NativeMethods.GetWindowThreadProcessId(p.TargetHwnd, out var pid);
             var prof = _profiles.FirstOrDefault(x => x.Instance?.Pid == pid);
             if (prof is null) { _profiles = _catalog.Discover(_install); prof = _profiles.FirstOrDefault(x => x.Instance?.Pid == pid); }
@@ -382,7 +382,12 @@ public partial class MainWindow : Window
     }
 
     private void OnRowOpen(object sender, RoutedEventArgs e) { if (RowOf(sender) is { } r && r.P.MainWindow != IntPtr.Zero) OpenProfile(r.P); }
-    private void OnRowStart(object sender, RoutedEventArgs e) { if (RowOf(sender) is { } r) Launch(r.P); }
+    private void OnRowStart(object sender, RoutedEventArgs e)
+    {
+        if (RowOf(sender) is not { } r) return;
+        if (DemoProfiles is not null) { Info("Demo mode", "Made-up profiles can't be started. Run without --demo to work with your real profiles."); return; }
+        Launch(r.P);
+    }
 
     /// <summary>A running instance without a visible window: show the hidden one if it still exists, else relaunch the profile so
     /// Electron's single-instance hand-off makes the running instance show itself (what both switchers do).</summary>
@@ -390,6 +395,7 @@ public partial class MainWindow : Window
     {
         if (RowOf(sender) is not { } r || r.P.Instance is null) return;
         if (r.P.MainWindow != IntPtr.Zero) { NativeMethods.SetForegroundWindow(r.P.MainWindow); return; }
+        if (DemoProfiles is not null) return;
         var hidden = ClaudeFinder.HiddenMainWindows(r.P.Instance.Pid, "Chrome_WidgetWin_1").FirstOrDefault();
         if (hidden is not null)
         {
@@ -418,14 +424,16 @@ public partial class MainWindow : Window
         if (dlg.ShowDialog() != true) return;
         var err = ProfileCatalog.ValidateName(dlg.Value, _profiles.Where(p => p != r.P));
         if (err is not null) { Info("Can't use that name", err); return; }
-        _catalog!.Rename(r.P, dlg.Value.Trim());
+        if (DemoProfiles is not null) r.P.Name = dlg.Value.Trim(); // demo: in memory only, never the real profiles.json
+        else _catalog!.Rename(r.P, dlg.Value.Trim());
         foreach (var pane in PanesList) if (pane.TargetHwnd != IntPtr.Zero && pane.TargetHwnd == r.P.MainWindow) pane.ProfileName = r.P.Name;
         RefreshHome();
     }
     private void OnRowColour(object sender, RoutedEventArgs e)
     {
         if (RowOf(sender) is not { } r) return;
-        _catalog!.SetColor(r.P, (r.P.Color + 1) % 10);
+        if (DemoProfiles is not null) r.P.Color = (r.P.Color + 1) % 10;
+        else _catalog!.SetColor(r.P, (r.P.Color + 1) % 10);
         foreach (var pane in PanesList) if (pane.TargetHwnd != IntPtr.Zero && pane.TargetHwnd == r.P.MainWindow) { pane.ColorIndex = r.P.Color; pane.ColorBrush = (Brush)FindResource("P" + (r.P.Color + 1)); }
         RefreshHome();
     }
@@ -443,13 +451,16 @@ public partial class MainWindow : Window
         if (r.P.Instance is not null) { Info($"Kill {r.P.Name} first", "A running profile can't be deleted. Kill it, then delete."); return; }
         var dlg = new ConfirmWindow($"Delete {r.P.Name}?", "This signs the account out on this PC. Its profile folder, saved sign-in and shortcuts go to the Recycle Bin. Other profiles stay.", "Delete", danger: true, typeToConfirm: r.P.Name) { Owner = this };
         if (dlg.ShowDialog() != true) return;
+        if (DemoProfiles is not null) { DemoProfiles.Remove(r.P); LogLine($"demo: removed {r.P.Id} from the made-up list"); RefreshHome(); return; }
         var err = _catalog!.Delete(r.P);
         if (err is not null) Info("Not deleted", err);
+        else LogLine($"deleted profile {r.P.Id}");
         RefreshHome();
     }
 
     private void OnAddAccount(object sender, RoutedEventArgs e)
     {
+        if (DemoProfiles is not null) { Info("Demo mode", "Accounts can't be added in demo mode. Run without --demo to work with your real profiles."); return; }
         if (_install is null) { Info("Claude not found", "Claude Desktop was not found on this PC, so a new account can't be started."); return; }
         var dlg = new PromptWindow("Add account", "Opens Claude at the sign-in screen in a new window. Nothing is copied from your other profiles.", "") { Owner = this };
         if (dlg.ShowDialog() != true) return;
@@ -477,6 +488,18 @@ public partial class MainWindow : Window
         var dlg = new ConfirmWindow($"Kill {p.Name}?", "Anything running inside it, such as a background task or a Claude Code session, will stop. Your conversations are kept.", "Kill", danger: true) { Owner = this };
         if (dlg.ShowDialog() != true) return;
         foreach (var pane in PanesList) if (pane.TargetHwnd != IntPtr.Zero && pane.TargetHwnd == p.MainWindow) pane.Release();
+        if (DemoProfiles is not null)
+        {
+            // Demo: the pid is made up, so end the dummy behind the window instead, never a process by that number.
+            if (p.MainWindow != IntPtr.Zero && NativeMethods.IsWindow(p.MainWindow))
+            {
+                NativeMethods.GetWindowThreadProcessId(p.MainWindow, out var dummyPid);
+                try { using var d = Process.GetProcessById((int)dummyPid); if (d.ProcessName.Equals("Multipane", StringComparison.OrdinalIgnoreCase)) d.Kill(); } catch { /* demo */ }
+            }
+            p.Instance = null; p.MainWindow = IntPtr.Zero;
+            RefreshHome();
+            return;
+        }
         await ProfileCatalog.KillAsync(p, LogLine);
         RefreshHome();
     }
