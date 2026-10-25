@@ -18,6 +18,46 @@ public sealed class ProfileInfo
     public IntPtr MainWindow { get; set; }
 }
 
+public sealed record SavedPane(string Id, string Name, int Color);
+public sealed record SavedLayout(string Mode, List<SavedPane> Panes, bool Restore);
+
+/// <summary>Which profiles were open in which arrangement, so the next start docks them again without clicks.</summary>
+public static class LayoutStore
+{
+    private static readonly string FilePath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Multipane", "layout.json");
+
+    public static SavedLayout Load()
+    {
+        try
+        {
+            if (!File.Exists(FilePath)) return new SavedLayout("columns", new List<SavedPane>(), true);
+            var root = JsonNode.Parse(File.ReadAllText(FilePath));
+            var panes = (root?["panes"]?.AsArray() ?? new JsonArray())
+                .Select(n => new SavedPane(n?["id"]?.GetValue<string>() ?? "", n?["name"]?.GetValue<string>() ?? "", n?["color"]?.GetValue<int>() ?? 0))
+                .Where(p => p.Id.Length > 0).ToList();
+            return new SavedLayout(root?["mode"]?.GetValue<string>() ?? "columns", panes, root?["restore"]?.GetValue<bool>() ?? true);
+        }
+        catch { return new SavedLayout("columns", new List<SavedPane>(), true); }
+    }
+
+    public static void Save(SavedLayout layout)
+    {
+        try
+        {
+            Directory.CreateDirectory(System.IO.Path.GetDirectoryName(FilePath)!);
+            var doc = new JsonObject
+            {
+                ["version"] = 1, ["mode"] = layout.Mode, ["restore"] = layout.Restore,
+                ["panes"] = new JsonArray(layout.Panes.Select(p => (JsonNode)new JsonObject { ["id"] = p.Id, ["name"] = p.Name, ["color"] = p.Color }).ToArray())
+            };
+            var tmp = FilePath + ".tmp";
+            File.WriteAllText(tmp, doc.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+            File.Move(tmp, FilePath, true);
+        }
+        catch { /* losing the layout only costs a few clicks */ }
+    }
+}
+
 /// <summary>
 /// Finds profiles the way docs/tech/06 describes (both switcher layouts, read-only), keeps the spike's own labels and colours in
 /// %LOCALAPPDATA%\Multipane\profiles.json, and offers add, rename, delete and kill. Never writes inside a profile folder.
@@ -122,7 +162,10 @@ public sealed class ProfileCatalog
         try
         {
             if (!File.Exists(file)) return (labels, colors);
-            using var doc = JsonDocument.Parse(File.ReadAllBytes(file)); // read-only; the BOM the switchers write is skipped by the parser
+            var bytes = File.ReadAllBytes(file); // read-only
+            // Both switchers write a UTF-8 byte-order mark, which JsonDocument rejects; skip it.
+            var bom = bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF ? 3 : 0;
+            using var doc = JsonDocument.Parse(new ReadOnlyMemory<byte>(bytes, bom, bytes.Length - bom));
             if (doc.RootElement.TryGetProperty("Labels", out var l)) foreach (var e in l.EnumerateObject()) labels[e.Name] = e.Value.GetString() ?? e.Name;
             if (doc.RootElement.TryGetProperty("Colors", out var c)) foreach (var e in c.EnumerateObject()) if (e.Value.TryGetInt32(out var i)) colors[e.Name] = i;
         }

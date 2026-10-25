@@ -20,9 +20,16 @@ public partial class App : Application
         }
         var win = new MainWindow();
         MainWindow = win;
+        // An unexpected exception is logged and the app keeps running; exiting would leave every hosted window frameless.
+        DispatcherUnhandledException += (_, ex) =>
+        {
+            try { win.LogLine("UNHANDLED: " + ex.Exception); } catch { /* logging itself failed */ }
+            ex.Handled = true;
+        };
         win.Show();
         if (args.Contains("--selftest")) _ = SelfTest.RunAsync(win);
         var demoAt = Array.IndexOf(args, "--demo");
         if (demoAt >= 0) _ = Demo.RunAsync(win, demoAt + 1 < args.Length ? args[demoAt + 1] : null);
+        else if (!args.Contains("--selftest")) _ = win.RestoreSessionAsync();
     }
 }

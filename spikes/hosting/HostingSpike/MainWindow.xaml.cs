@@ -55,6 +55,8 @@ public partial class MainWindow : Window
     private PaneView? _maximized;
     private PaneView? _pickFor;
     private bool _homeOpen;
+    private bool _relayouting;
+    private bool _restoreSession = true;
     private readonly DispatcherTimer _tick = new() { Interval = TimeSpan.FromSeconds(1) };
     private int _ticks;
     private readonly string _logPath = Path.Combine(AppContext.BaseDirectory, $"spike-{DateTime.Now:yyyyMMdd-HHmmss}.log");
@@ -115,20 +117,22 @@ public partial class MainWindow : Window
 
     // ----- panes and layout -----
 
-    public PaneView AddPane(string? name = null)
+    public PaneView AddPane(string? name = null, string? profileId = null, int? color = null)
     {
-        var pane = new PaneView(Hwnd, LogLine) { ColorIndex = PanesList.Count % 10 };
+        var pane = new PaneView(Hwnd, LogLine) { ColorIndex = color ?? PanesList.Count % 10, ProfileId = profileId };
         pane.ColorBrush = (Brush)FindResource("P" + (pane.ColorIndex + 1));
         pane.ProfileName = name ?? $"Pane {PanesList.Count + 1}";
         pane.Activated += p =>
         {
             var i = PanesList.IndexOf(p); if (i < 0) return;
             _active = i;
+            if (_relayouting) return; // activation raised by Relayout itself must not start another layout
             // In Focus mode, clicking a strip pane's header makes it the large one.
             if (_mode == LayoutMode.Focus && _focus != i) { _focus = i; Relayout(); }
             else if (_mode == LayoutMode.Tabs) Relayout();
         };
-        pane.RemoveRequested += p => { p.Release(); PanesList.Remove(p); TabsList.Remove(TabsList.First(t => t.Pane == p)); if (_maximized == p) _maximized = null; Relayout(); };
+        pane.RemoveRequested += p => { p.Release(); PanesList.Remove(p); TabsList.Remove(TabsList.First(t => t.Pane == p)); if (_maximized == p) _maximized = null; Relayout(); SaveLayout(); };
+        pane.StartRequested += p => _ = StartIntoPaneAsync(p);
         pane.KillRequested += async p =>
         {
             NativeMethods.GetWindowThreadProcessId(p.TargetHwnd, out var pid);
@@ -155,8 +159,80 @@ public partial class MainWindow : Window
         PanesList.Add(pane);
         TabsList.Add(new PaneTab(pane));
         Relayout();
+        SaveLayout();
         return pane;
     }
+
+    // ----- session: remember which profiles were open, dock them again at the next start -----
+
+    private void SaveLayout()
+    {
+        if (DemoProfiles is not null || !IsLoaded) return;
+        var panes = PanesList.Where(p => p.ProfileId is not null).Select(p => new SavedPane(p.ProfileId!, p.ProfileName, p.ColorIndex)).ToList();
+        LayoutStore.Save(new SavedLayout(_mode.ToString().ToLowerInvariant(), panes, _restoreSession));
+    }
+
+    /// <summary>At start: recreate the saved panes, dock the profiles that are running (revealing hidden windows), leave the rest as Start.</summary>
+    public async Task RestoreSessionAsync()
+    {
+        await Task.Delay(300);
+        if (_catalog is null) return;
+        var saved = LayoutStore.Load();
+        _restoreSession = saved.Restore;
+        MenuRestore.IsChecked = _restoreSession;
+        if (!_restoreSession || saved.Panes.Count == 0) return;
+        if (Enum.TryParse<LayoutMode>(saved.Mode, true, out var m)) ApplyMode(m);
+        _profiles = _catalog.Discover(_install);
+        foreach (var sp in saved.Panes)
+        {
+            var p = _profiles.FirstOrDefault(x => string.Equals(x.Id, sp.Id, StringComparison.OrdinalIgnoreCase));
+            var pane = AddPane(p?.Name ?? sp.Name, sp.Id, p?.Color ?? sp.Color);
+            if (p?.Instance is null) continue;
+            var hwnd = RevealedWindow(p);
+            if (hwnd != IntPtr.Zero) pane.Attach(hwnd, Mode, MenuToolWindow.IsChecked);
+        }
+        Relayout();
+        LogLine($"session restored: {saved.Panes.Count} panes, {PanesList.Count(x => x.Hosted is not null)} docked");
+    }
+
+    /// <summary>The profile's main window, showing it first if it was hidden to the tray.</summary>
+    private static IntPtr RevealedWindow(ProfileInfo p)
+    {
+        if (p.MainWindow != IntPtr.Zero) return p.MainWindow;
+        if (p.Instance is null) return IntPtr.Zero;
+        var hidden = ClaudeFinder.HiddenMainWindows(p.Instance.Pid, "Chrome_WidgetWin_1").FirstOrDefault();
+        if (hidden is null) return IntPtr.Zero;
+        NativeMethods.ShowWindow(hidden.Hwnd, 5 /* SW_SHOW */);
+        p.MainWindow = hidden.Hwnd;
+        return hidden.Hwnd;
+    }
+
+    /// <summary>Launch the pane's profile and dock its window when it appears (up to 40 s).</summary>
+    private async Task StartIntoPaneAsync(PaneView pane)
+    {
+        if (pane.ProfileId is null || _catalog is null || DemoProfiles is not null) return;
+        _profiles = _catalog.Discover(_install);
+        var p = _profiles.FirstOrDefault(x => string.Equals(x.Id, pane.ProfileId, StringComparison.OrdinalIgnoreCase));
+        if (p is null) { Info("Profile not found", $"{pane.ProfileName} is no longer in the profile list."); return; }
+        pane.MarkStarting();
+        if (p.Instance is null) Launch(p);
+        for (var i = 0; i < 40 && pane.State == PaneState.Starting; i++)
+        {
+            await Task.Delay(1000);
+            _profiles = _catalog.Discover(_install);
+            p = _profiles.FirstOrDefault(x => string.Equals(x.Id, pane.ProfileId, StringComparison.OrdinalIgnoreCase));
+            if (p?.Instance is null) continue;
+            if (i < 2 && p.MainWindow == IntPtr.Zero) continue; // give a fresh process a moment before revealing anything
+            var hwnd = RevealedWindow(p);
+            if (hwnd == IntPtr.Zero) continue;
+            pane.Attach(hwnd, Mode, MenuToolWindow.IsChecked);
+            Relayout();
+            return;
+        }
+        if (pane.State == PaneState.Starting) { pane.MarkNotRunning(); LogLine($"start {pane.ProfileId}: no window after 40 s"); }
+    }
+
+    private void OnRestoreToggle(object sender, RoutedEventArgs e) { _restoreSession = MenuRestore.IsChecked; SaveLayout(); }
 
     /// <summary>Host a window in pane <paramref name="index"/>, creating panes up to it. Used by the picker and the self-test.</summary>
     public HostedWindow? Host(IntPtr target, int index, HostMode mode)
@@ -169,6 +245,13 @@ public partial class MainWindow : Window
     }
 
     public void Relayout()
+    {
+        if (_relayouting) return;
+        _relayouting = true;
+        try { RelayoutCore(); } finally { _relayouting = false; }
+    }
+
+    private void RelayoutCore()
     {
         var visible = PanesList.Where(p => !p.IsHidden).ToList();
         Area.Children.Clear();
@@ -245,6 +328,7 @@ public partial class MainWindow : Window
         if (mode == LayoutMode.Focus) _focus = _active;
         (mode switch { LayoutMode.Tabs => ModeTabs, LayoutMode.Columns => ModeColumns, LayoutMode.Rows => ModeRows, LayoutMode.Grid => ModeGrid, _ => ModeFocus }).IsChecked = true;
         Relayout();
+        SaveLayout();
     }
 
     private void OnModeChecked(object sender, RoutedEventArgs e)
@@ -388,19 +472,41 @@ public partial class MainWindow : Window
     private PaneView OpenProfile(ProfileInfo p)
     {
         if (_homeOpen) { _homeOpen = false; foreach (var x in PanesList) if (!x.IsHidden) x.SuspendWindow(false); }
-        var pane = AddPane(p.Name);
-        pane.ColorIndex = p.Color; pane.ColorBrush = (Brush)FindResource("P" + (p.Color + 1));
+        var pane = AddPane(p.Name, p.Id, p.Color);
         pane.Attach(p.MainWindow, Mode, MenuToolWindow.IsChecked);
         Relayout();
         return pane;
     }
 
     private void OnRowOpen(object sender, RoutedEventArgs e) { if (RowOf(sender) is { } r && r.P.MainWindow != IntPtr.Zero) OpenProfile(r.P); }
+
+    /// <summary>Dock every running profile that is not in a pane yet, revealing windows hidden to the tray.</summary>
+    private void OnOpenAll(object sender, RoutedEventArgs e)
+    {
+        if (_catalog is null) return;
+        _profiles = DemoProfiles ?? _catalog.Discover(_install);
+        var opened = 0;
+        foreach (var p in _profiles.Where(p => p.Instance is not null))
+        {
+            if (PanesList.Any(x => x.TargetHwnd != IntPtr.Zero && x.TargetHwnd == p.MainWindow && p.MainWindow != IntPtr.Zero)) continue;
+            var hwnd = DemoProfiles is not null ? p.MainWindow : RevealedWindow(p);
+            if (hwnd == IntPtr.Zero || PanesList.Any(x => x.TargetHwnd == hwnd)) continue;
+            var pane = PanesList.FirstOrDefault(x => x.ProfileId == p.Id && x.Hosted is null && x.State != PaneState.PoppedOut) ?? AddPane(p.Name, p.Id, p.Color);
+            pane.Attach(hwnd, Mode, MenuToolWindow.IsChecked);
+            opened++;
+        }
+        if (_homeOpen && PanesList.Any(x => !x.IsHidden)) { _homeOpen = false; foreach (var x in PanesList) if (!x.IsHidden) x.SuspendWindow(false); }
+        Relayout();
+        LogLine($"open all: {opened} docked");
+    }
     private void OnRowStart(object sender, RoutedEventArgs e)
     {
         if (RowOf(sender) is not { } r) return;
         if (DemoProfiles is not null) { Info("Demo mode", "Made-up profiles can't be started. Run without --demo to work with your real profiles."); return; }
-        Launch(r.P);
+        // Start into a pane: the window docks itself when it appears.
+        if (_homeOpen) { _homeOpen = false; foreach (var x in PanesList) if (!x.IsHidden) x.SuspendWindow(false); }
+        var pane = AddPane(r.P.Name, r.P.Id, r.P.Color);
+        _ = StartIntoPaneAsync(pane);
     }
 
     /// <summary>A running instance without a visible window: show the hidden one if it still exists, else relaunch the profile so
@@ -531,9 +637,9 @@ public partial class MainWindow : Window
         Picker.IsOpen = false;
         if (_homeOpen) { _homeOpen = false; foreach (var x in PanesList) if (!x.IsHidden) x.SuspendWindow(false); }
         var prof = _profiles.FirstOrDefault(p => p.Instance?.Pid == entry.Pid);
-        var pane = _pickFor ?? AddPane(entry.Name);
+        var pane = _pickFor ?? AddPane(entry.Name, prof?.Id, prof?.Color);
         if (_pickFor is not null && pane.ProfileName.StartsWith("Pane ", StringComparison.Ordinal)) pane.ProfileName = entry.Name;
-        if (prof is not null) { pane.ColorIndex = prof.Color; pane.ColorBrush = (Brush)FindResource("P" + (prof.Color + 1)); }
+        if (prof is not null) { pane.ProfileId = prof.Id; pane.ColorIndex = prof.Color; pane.ColorBrush = (Brush)FindResource("P" + (prof.Color + 1)); }
         pane.Attach(entry.Hwnd, Mode, MenuToolWindow.IsChecked);
         _pickFor = null;
         Relayout();
@@ -636,5 +742,5 @@ public partial class MainWindow : Window
     private void OnMinimize(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
     private void OnMaximize(object sender, RoutedEventArgs e) => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
     private void OnClose(object sender, RoutedEventArgs e) => Close();
-    private void OnClosing(object? sender, System.ComponentModel.CancelEventArgs e) => ReleaseAll();
+    private void OnClosing(object? sender, System.ComponentModel.CancelEventArgs e) { SaveLayout(); ReleaseAll(); }
 }

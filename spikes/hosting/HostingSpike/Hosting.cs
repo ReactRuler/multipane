@@ -97,6 +97,7 @@ public sealed class HostedWindow
     public bool Place(RECT screenRect)
     {
         if (_released || Hidden || !IsWindow(Hwnd)) return true;
+        if (screenRect.Width < 50 || screenRect.Height < 50) return true; // the pane has not been laid out yet; a 10×10 placement would flash
         if (screenRect.Left == _last.Left && screenRect.Top == _last.Top && screenRect.Width == _last.Width && screenRect.Height == _last.Height) return true;
         _last = screenRect;
         var flags = SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW | (Mode == HostMode.B_Owned ? SWP_NOOWNERZORDER : 0);

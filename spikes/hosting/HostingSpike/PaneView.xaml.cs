@@ -8,7 +8,7 @@ using System.Windows.Media;
 
 namespace HostingSpike;
 
-public enum PaneState { Empty, Running, NotResponding, PoppedOut, Gone }
+public enum PaneState { Empty, Starting, Running, NotResponding, PoppedOut, Gone }
 
 /// <summary>One pane: stripe, 30 px header with badge, state glyph and memory, then either the hosted window or a placeholder.</summary>
 public partial class PaneView : UserControl, INotifyPropertyChanged
@@ -21,6 +21,10 @@ public partial class PaneView : UserControl, INotifyPropertyChanged
     public event Action<PaneView>? KillRequested;
     /// <summary>The user renamed or recoloured this pane; the shell persists it to the profile.</summary>
     public event Action<PaneView>? IdentityChanged;
+    /// <summary>The pane knows its profile and the user pressed Start.</summary>
+    public event Action<PaneView>? StartRequested;
+    /// <summary>Profile behind this pane, when known (restored session or opened from the home page).</summary>
+    public string? ProfileId { get; set; }
     public event Action<PaneView>? Changed;
 
     private string _name = "Pane";
@@ -60,6 +64,7 @@ public partial class PaneView : UserControl, INotifyPropertyChanged
     public string StateText => State switch
     {
         PaneState.Empty => "Not running",
+        PaneState.Starting => "Starting",
         PaneState.Running => "Running",
         PaneState.NotResponding => "Not responding",
         PaneState.PoppedOut => "Running · in its own window",
@@ -70,7 +75,7 @@ public partial class PaneView : UserControl, INotifyPropertyChanged
     public Brush StateBrush => (Brush)FindResource(State switch
     {
         PaneState.Running or PaneState.PoppedOut => "Ok",
-        PaneState.NotResponding => "Warn",
+        PaneState.NotResponding or PaneState.Starting => "Warn",
         _ => "Text3"
     });
 
@@ -84,13 +89,16 @@ public partial class PaneView : UserControl, INotifyPropertyChanged
     public Geometry? GlyphStroke => State switch
     {
         PaneState.Empty => (Geometry)FindResource("GlyphRing"),
+        PaneState.Starting => (Geometry)FindResource("GlyphRing"),
         PaneState.NotResponding => Geometry.Combine((Geometry)FindResource("GlyphRing"), (Geometry)FindResource("GlyphClockHand"), GeometryCombineMode.Union, null),
         _ => null
     };
 
     public string PlaceholderTitle => State switch
     {
+        PaneState.Empty when ProfileId is not null => $"{ProfileName} is not running",
         PaneState.Empty => $"{ProfileName} has no window yet",
+        PaneState.Starting => $"Starting {ProfileName}",
         PaneState.PoppedOut => $"{ProfileName} is running in its own window",
         PaneState.Gone => $"{ProfileName}'s window closed at {_goneAt:HH:mm}",
         _ => ""
@@ -98,27 +106,33 @@ public partial class PaneView : UserControl, INotifyPropertyChanged
 
     public string PlaceholderBody => State switch
     {
-        PaneState.Empty => "Choose a running window to host here. In the product this pane starts the profile.",
+        PaneState.Empty when ProfileId is not null => "Start it here. Its window docks into this pane as soon as it appears.",
+        PaneState.Empty => "Choose a running window to host here.",
+        PaneState.Starting => "Waiting for the Claude window. Usually 2 to 6 seconds.",
         PaneState.PoppedOut => "Everything in it is fine; it just isn't docked. Dock back returns it to this slot.",
         PaneState.Gone => "The process ended or closed its window. The slot is kept so nothing shifts.",
         _ => ""
     };
 
+    public void MarkStarting() => State = PaneState.Starting;
+    public void MarkNotRunning() { if (State == PaneState.Starting) State = PaneState.Empty; }
+
     private void UpdatePlaceholder()
     {
-        var showPlaceholder = State is PaneState.Empty or PaneState.PoppedOut or PaneState.Gone;
+        var showPlaceholder = State is PaneState.Empty or PaneState.Starting or PaneState.PoppedOut or PaneState.Gone;
         Placeholder.Visibility = showPlaceholder ? Visibility.Visible : Visibility.Collapsed;
         Host.Visibility = showPlaceholder ? Visibility.Hidden : Visibility.Visible;
         DockBackButton.Visibility = State == PaneState.PoppedOut ? Visibility.Visible : Visibility.Collapsed;
         PopOutButton.Visibility = State is PaneState.Running or PaneState.NotResponding ? Visibility.Visible : Visibility.Collapsed;
         MenuPopOut.Header = State == PaneState.PoppedOut ? "Dock back" : "Pop out";
-        PrimaryAction.Content = State switch { PaneState.PoppedOut => "Dock back", PaneState.Gone => "Choose another window", _ => "Choose a window" };
+        PrimaryAction.Content = State switch { PaneState.PoppedOut => "Dock back", PaneState.Gone => "Choose another window", PaneState.Starting => "Cancel", PaneState.Empty when ProfileId is not null => "Start", _ => "Choose a window" };
         PlaceholderGlyph.Data = State switch
         {
             PaneState.Gone => Geometry.Parse("M4,4 L24,4 A3,3 0 0 1 27,7 L27,24 A3,3 0 0 1 24,27 L7,27 A3,3 0 0 1 4,24 L4,7 A3,3 0 0 1 7,4 Z"),
             PaneState.PoppedOut => Geometry.Parse("M12,5 L5,5 L5,23 L23,23 L23,16 M16,5 L23,5 L23,12 M23,5 L13,15"),
             _ => Geometry.Parse("M14,4 A10,10 0 1 0 14,24 A10,10 0 1 0 14,4 Z")
         };
+        PlaceholderGlyph.StrokeDashArray = State == PaneState.Starting ? new DoubleCollection { 3.5, 2.5 } : null;
         Notify(nameof(PlaceholderTitle)); Notify(nameof(PlaceholderBody));
     }
 
@@ -211,7 +225,13 @@ public partial class PaneView : UserControl, INotifyPropertyChanged
     private void OnBringForward(object sender, RoutedEventArgs e) { if (_target != IntPtr.Zero) NativeMethods.SetForegroundWindow(_target); }
     private void OnRemove(object sender, RoutedEventArgs e) => RemoveRequested?.Invoke(this);
     private void OnKill(object sender, RoutedEventArgs e) { if (_target != IntPtr.Zero) KillRequested?.Invoke(this); }
-    private void OnPrimaryAction(object sender, RoutedEventArgs e) { if (State == PaneState.PoppedOut) DockBack(); else ChooseWindowRequested?.Invoke(this); }
+    private void OnPrimaryAction(object sender, RoutedEventArgs e)
+    {
+        if (State == PaneState.PoppedOut) DockBack();
+        else if (State == PaneState.Starting) MarkNotRunning();
+        else if (State == PaneState.Empty && ProfileId is not null) StartRequested?.Invoke(this);
+        else ChooseWindowRequested?.Invoke(this);
+    }
     private void OnRename(object sender, RoutedEventArgs e)
     {
         var dlg = new PromptWindow("Rename " + ProfileName, "Its sign-in and data stay as they are.", ProfileName) { Owner = Window.GetWindow(this) };

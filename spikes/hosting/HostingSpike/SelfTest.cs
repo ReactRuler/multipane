@@ -90,6 +90,13 @@ public static class SelfTest
             Add("B: placed after maximise", RectMatches(two, win.Panes[1].ScreenRect()), Describe(two, win.Panes[1].ScreenRect()));
             win.WindowState = WindowState.Normal; await Task.Delay(600);
 
+            // Tabs mode: exactly one of the two hosted windows visible, placed over the pane; switching back shows both. (A crash lived here.)
+            win.ApplyMode(LayoutMode.Tabs); await Task.Delay(500);
+            var visibleCount = (IsWindowVisible(one) ? 1 : 0) + (IsWindowVisible(two) ? 1 : 0);
+            Add("tabs: one window visible", visibleCount == 1, $"visible={visibleCount}");
+            win.ApplyMode(LayoutMode.Columns); await Task.Delay(500);
+            Add("columns again: both visible and placed", IsWindowVisible(one) && IsWindowVisible(two) && RectMatches(two, win.Panes[1].ScreenRect()), Describe(two, win.Panes[1].ScreenRect()));
+
             var beforeA = hA.Before; var beforeB = hB.Before;
             win.ReleaseAll();
             await Task.Delay(400);

@@ -94,6 +94,7 @@
               <MenuItem x:Name="MenuThemeLight" Header="Light" IsCheckable="True" Click="OnTheme" Tag="light"/>
               <MenuItem x:Name="MenuThemeDark" Header="Dark" IsCheckable="True" Click="OnTheme" Tag="dark"/>
               <Separator/>
+              <MenuItem x:Name="MenuRestore" Header="Restore last session at start" IsCheckable="True" IsChecked="True" Click="OnRestoreToggle" ToolTip="Opens the same profiles in the same arrangement next time, docking the ones that are running"/>
               <MenuItem Header="Add an empty pane" Click="OnAddPane"/>
               <MenuItem Header="Launch a profile…" Click="OnLaunchProfile"/>
               <MenuItem Header="Release all" Click="OnReleaseAll"/>
@@ -126,8 +127,9 @@
           <TextBlock Text="Multipane" FontSize="32" FontWeight="SemiBold" TextAlignment="Center" Margin="0,20,0,0"/>
           <TextBlock Text="One window for your Claude profiles. Open a profile that is already running, start one, or add a new account." Foreground="{DynamicResource Text2}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,8,0,0"/>
           <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,24,0,0">
-            <Button x:Name="HomeBack" Style="{StaticResource BtnPrimary}" Content="Back to panes" Click="OnHome" Visibility="Collapsed" Margin="0,0,8,0"/>
-            <Button Style="{StaticResource BtnPrimary}" Content="Open a running profile" Click="OnShown"/>
+            <Button x:Name="HomeBack" Style="{StaticResource Btn}" Content="Back to panes" Click="OnHome" Visibility="Collapsed" Margin="0,0,8,0"/>
+            <Button Style="{StaticResource BtnPrimary}" Content="Open all running here" Click="OnOpenAll" ToolTip="Docks every running profile into a pane, showing windows that were hidden to the tray"/>
+            <Button Style="{StaticResource Btn}" Content="Open one…" Margin="8,0,0,0" Click="OnShown"/>
             <Button Style="{StaticResource Btn}" Content="Add account" Margin="8,0,0,0" Click="OnAddAccount"/>
             <Button Style="{StaticResource Btn}" Content="Add an empty pane" Margin="8,0,0,0" Click="OnAddPane"/>
           </StackPanel>
