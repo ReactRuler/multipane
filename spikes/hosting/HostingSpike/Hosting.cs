@@ -56,8 +56,15 @@ public sealed class HostedWindow
         // (seen with a maximised Claude window: it sat at its restore bounds inside the pane). Restore it first.
         if (IsZoomed(hwnd) || IsIconic(hwnd)) { ShowWindow(hwnd, SW_RESTORE); log($"attach {hwnd:X}: window was maximised or minimised, restored first"); }
         GetWindowRect(hwnd, out var rect);
-        var before = new Original(Style(hwnd), ExStyle(hwnd), GetWindowLongPtr(hwnd, GWLP_HWNDPARENT), rect);
-        log($"attach {hwnd:X} mode={mode} style=0x{before.Style:X8} ex=0x{before.ExStyle:X8} owner={before.Owner:X}");
+        var style0 = Style(hwnd); var ex0 = ExStyle(hwnd); var owner0 = GetWindowLongPtr(hwnd, GWLP_HWNDPARENT);
+        // A window a crashed host left behind has no frame and a dead owner. Remember what a normal main window looks like
+        // instead, so Release gives it a real frame back; and drop the ghost owner.
+        const uint frame = WS_CAPTION | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
+        var leftStripped = (style0 & (WS_CAPTION | WS_THICKFRAME)) == 0 && (style0 & WS_CHILD) == 0;
+        if (leftStripped) { style0 |= frame; ex0 = (ex0 & ~WS_EX_TOOLWINDOW) | WS_EX_APPWINDOW; log($"attach {hwnd:X}: found frameless (left by an earlier host), will restore a standard frame on release"); }
+        if (owner0 != IntPtr.Zero && !IsWindow(owner0)) owner0 = IntPtr.Zero;
+        var before = new Original(style0, ex0, owner0, rect);
+        log($"attach {hwnd:X} mode={mode} style=0x{Style(hwnd):X8} ex=0x{ExStyle(hwnd):X8} owner={GetWindowLongPtr(hwnd, GWLP_HWNDPARENT):X}");
 
         var style = before.Style & ~(WS_CAPTION | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
         if (mode == HostMode.A_Reparent)

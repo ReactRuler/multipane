@@ -20,6 +20,14 @@ public partial class DummyWindow : Window
         }
         // "Bar" imitates Claude's quick-entry window: same class family, titled, but not resizable or maximisable.
         if (name == "Bar") { ResizeMode = ResizeMode.NoResize; Width = 640; Height = 80; }
+        // "Stripped" imitates a main window a crashed host left behind: large, but with its frame styles removed.
+        if (name == "Stripped")
+            SourceInitialized += (_, _) =>
+            {
+                var h = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+                NativeMethods.SetStyle(h, NativeMethods.Style(h) & ~(NativeMethods.WS_CAPTION | NativeMethods.WS_THICKFRAME | NativeMethods.WS_SYSMENU | NativeMethods.WS_MINIMIZEBOX | NativeMethods.WS_MAXIMIZEBOX));
+                NativeMethods.SetWindowPos(h, IntPtr.Zero, 0, 0, 0, 0, NativeMethods.SWP_NOZORDER | NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_FRAMECHANGED | 0x0001 | 0x0002);
+            };
         // Every dummy answers WM_APP+1 by resizing itself, the way a user dragging Electron's own resize edge would.
         SourceInitialized += (_, _) => System.Windows.Interop.HwndSource.FromHwnd(new System.Windows.Interop.WindowInteropHelper(this).Handle)!.AddHook(SelfResizeHook);
     }

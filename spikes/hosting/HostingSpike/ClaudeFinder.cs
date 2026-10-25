@@ -102,14 +102,21 @@ public static class ClaudeFinder
         var visible = NativeMethods.IsWindowVisible(h) || NativeMethods.IsCloaked(h);
         if (visible != wantVisible) return false;
         var hosted = KnownHosted.Contains(h); // owned by us and frame-stripped, yet still the main window
-        if (!hosted && NativeMethods.GetWindow(h, NativeMethods.GW_OWNER) != IntPtr.Zero) return false;
+        var owner = NativeMethods.GetWindow(h, NativeMethods.GW_OWNER);
+        // An owner that is no longer a window is the ghost of a host that crashed; such a window is still a main window.
+        if (!hosted && owner != IntPtr.Zero && NativeMethods.IsWindow(owner)) return false;
         var cls = NativeMethods.ClassName(h);
         if (requiredClass is not null && cls != requiredClass) return false;
         var title = NativeMethods.Title(h);
         if (title.Length == 0) return false;
         var style = NativeMethods.Style(h);
         const uint mainStyle = NativeMethods.WS_THICKFRAME | NativeMethods.WS_MAXIMIZEBOX;
-        if ((style & mainStyle) != mainStyle && !hosted) return false;
+        if ((style & mainStyle) != mainStyle && !hosted)
+        {
+            // No frame styles: either the quick-entry bar (a short strip) or a main window a crashed host left stripped (large).
+            NativeMethods.GetWindowRect(h, out var r);
+            if (r.Width < 500 || r.Height < 300) return false;
+        }
         w = new TopWindow(h, pid, cls, title);
         return true;
     }
