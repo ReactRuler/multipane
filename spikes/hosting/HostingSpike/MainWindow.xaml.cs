@@ -91,6 +91,18 @@ public partial class MainWindow : Window
         Theme.ApplyBackdrop(Hwnd, this);
     }
 
+    /// <summary>Windows maximises a window with its frame pushed off-screen. With a custom title bar that frame is our content,
+    /// so the content is padded by exactly the off-screen amount while maximised; otherwise the bottom row sits under the taskbar.</summary>
+    private void FitMaximisedContent()
+    {
+        if (WindowState != WindowState.Maximized || !NativeMethods.WorkAreaOf(Hwnd, out var work, out _)) { Root.Margin = new Thickness(0); return; }
+        NativeMethods.GetWindowRect(Hwnd, out var r);
+        var dpi = VisualTreeHelper.GetDpi(this);
+        Root.Margin = new Thickness(
+            Math.Max(0, work.Left - r.Left) / dpi.DpiScaleX, Math.Max(0, work.Top - r.Top) / dpi.DpiScaleY,
+            Math.Max(0, r.Right - work.Right) / dpi.DpiScaleX, Math.Max(0, r.Bottom - work.Bottom) / dpi.DpiScaleY);
+    }
+
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         _install = ClaudeFinder.FindInstall();
@@ -588,6 +600,7 @@ public partial class MainWindow : Window
     private void OnStateChanged(object? sender, EventArgs e)
     {
         var minimised = WindowState == WindowState.Minimized;
+        FitMaximisedContent();
         MaxButton.Content = WindowState == WindowState.Maximized ? "" : "";
         MaxButton.ToolTip = WindowState == WindowState.Maximized ? "Restore" : "Maximise";
         foreach (var p in PanesList) if (p.Visibility == Visibility.Visible && !p.IsHidden) p.SuspendWindow(minimised);

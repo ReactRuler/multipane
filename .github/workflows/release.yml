@@ -38,4 +38,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
-          gh release create "${{ github.ref_name }}" out/*.zip out/SHA256SUMS.txt --draft --title "Multipane ${{ github.ref_name }}" --notes-file .github/release-notes.md
+          $pre = if ("${{ github.ref_name }}" -match '-') { "--prerelease" } else { "" }
+          gh release create "${{ github.ref_name }}" out/*.zip out/SHA256SUMS.txt --draft $pre --title "Multipane ${{ github.ref_name }}" --notes-file .github/release-notes.md

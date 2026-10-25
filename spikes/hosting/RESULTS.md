@@ -4,7 +4,7 @@ Machine: Windows 11 24H2 (build 26300), 150 % scaling, Claude Desktop Store buil
 
 ## Automated self-test (dummy windows, 2026-10-25)
 
-`Multipane.exe --selftest`, 32 of 32 checks pass (24 hosting checks, 2 snap-back checks, 3 for a maximised size-clamping window, 3 layout-engine shape checks), log in `selftest-latest.txt`. The spike's shell now follows the design canvas (see `RUN.md`, demo mode), so the matrix can be run in the real chrome. Both approaches attach, strip the frame, follow resize and move to the pixel, hide and show, release cleanly with the original styles, owner and rectangle, and the target processes survive, including losing their owner handle (the host-crash case for B).
+`Multipane.exe --selftest`, 34 of 34 checks pass (24 hosting checks, 2 snap-back checks, 2 for the maximised host staying inside the work area, 3 for a maximised size-clamping window, 3 layout-engine shape checks), log in `selftest-latest.txt`. The spike's shell now follows the design canvas (see `RUN.md`, demo mode), so the matrix can be run in the real chrome. Both approaches attach, strip the frame, follow resize and move to the pixel, hide and show, release cleanly with the original styles, owner and rectangle, and the target processes survive, including losing their owner handle (the host-crash case for B).
 
 ### Findings that change the plan
 

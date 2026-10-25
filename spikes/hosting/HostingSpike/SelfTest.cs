@@ -82,6 +82,14 @@ public static class SelfTest
             win.WindowState = WindowState.Normal; await Task.Delay(600);
             Add("B: visible and placed after restore", IsWindowVisible(two) && RectMatches(two, win.Panes[1].ScreenRect()), Describe(two, win.Panes[1].ScreenRect()));
 
+            // Maximised, the host must stay inside the monitor's work area (not under the taskbar) and the panes must follow.
+            win.WindowState = WindowState.Maximized; await Task.Delay(600);
+            WorkAreaOf(win.Hwnd, out var work, out _);
+            var pr = win.Panes[1].ScreenRect();
+            Add("maximised: panes stay inside the work area (not under the taskbar)", pr.Left >= work.Left && pr.Top >= work.Top && pr.Right <= work.Right && pr.Bottom <= work.Bottom, $"pane=({pr.Left},{pr.Top})-({pr.Right},{pr.Bottom}) work=({work.Left},{work.Top})-({work.Right},{work.Bottom})");
+            Add("B: placed after maximise", RectMatches(two, win.Panes[1].ScreenRect()), Describe(two, win.Panes[1].ScreenRect()));
+            win.WindowState = WindowState.Normal; await Task.Delay(600);
+
             var beforeA = hA.Before; var beforeB = hB.Before;
             win.ReleaseAll();
             await Task.Delay(400);

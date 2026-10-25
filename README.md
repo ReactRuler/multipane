@@ -19,9 +19,11 @@ One window for all your Claude Desktop profiles on Windows. Tabs, columns, rows,
 
 No network access of any kind. No reading of cookies, tokens, chats or anything inside a Claude profile folder. No code injection, no debugging ports: only Electron's documented `--user-data-dir` switch and standard Windows window and process APIs. No admin rights, services or scheduled tasks. The full list of folders, registry keys and APIs it touches is in [docs/trust/what-this-app-touches.md](docs/trust/what-this-app-touches.md), and [SECURITY.md](SECURITY.md) says how to check it in under an hour.
 
-## Try the preview
+## Download the preview
 
-Needs Windows 10 or 11 and the .NET 8 Desktop Runtime.
+Grab `Multipane-<version>-win-x64.zip` from the [latest release](https://github.com/ReactRuler/multipane/releases/latest), unzip it anywhere and run `Multipane.exe`. Needs Windows 10 or 11 and the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0). The build is not code-signed yet, so SmartScreen asks once; every release ships `SHA256SUMS.txt` and a GitHub build provenance attestation (`gh attestation verify <zip> --owner ReactRuler`) so you can check that the file is exactly what the workflow built from the tagged source.
+
+Or build it yourself:
 
 ```bash
 dotnet build spikes/hosting/HostingSpike -c Release

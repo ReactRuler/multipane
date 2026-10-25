@@ -10,7 +10,7 @@
     <!-- GlassFrameThickness stays 0: extending the frame makes DWM paint its own caption buttons under ours. -->
     <WindowChrome CaptionHeight="44" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False"/>
   </WindowChrome.WindowChrome>
-  <Grid>
+  <Grid x:Name="Root">
     <Grid.RowDefinitions>
       <RowDefinition Height="44"/>
       <RowDefinition Height="*"/>
