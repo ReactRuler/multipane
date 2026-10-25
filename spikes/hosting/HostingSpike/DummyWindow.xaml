@@ -1,0 +1,17 @@
+<Window x:Class="HostingSpike.DummyWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Dummy" Width="640" Height="420" Background="#F7F3EA">
+  <DockPanel Margin="12">
+    <TextBlock DockPanel.Dock="Top" x:Name="Heading" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,8"/>
+    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+      <Button Content="Open popup" Click="OnPopup" Padding="10,4" Margin="0,0,8,0"/>
+      <Button Content="Open file dialog" Click="OnFileDialog" Padding="10,4" Margin="0,0,8,0"/>
+      <Button Content="Hang 5 s" Click="OnHang" Padding="10,4" Margin="0,0,8,0"/>
+      <Button Content="Exit code 5" Click="OnCrash" Padding="10,4"/>
+    </StackPanel>
+    <TextBlock DockPanel.Dock="Bottom" x:Name="Status" Foreground="#555" Margin="0,8,0,0"/>
+    <TextBox x:Name="Input" AcceptsReturn="True" TextWrapping="Wrap" FontSize="14"
+             TextChanged="OnTextChanged" GotKeyboardFocus="OnFocus" LostKeyboardFocus="OnFocus"/>
+  </DockPanel>
+</Window>

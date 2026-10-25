@@ -1,0 +1,39 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- Design tokens v2, dark. Deep charcoal with a slate tint, lifted cards, the same indigo accent brightened. -->
+  <SolidColorBrush x:Key="Mica" Color="#111317"/>
+  <SolidColorBrush x:Key="Surface" Color="#1A1D24"/>
+  <SolidColorBrush x:Key="Surface2" Color="#15181E"/>
+  <SolidColorBrush x:Key="Text" Color="#F2F3F7"/>
+  <SolidColorBrush x:Key="Text2" Color="#AEB4C2"/>
+  <SolidColorBrush x:Key="Text3" Color="#8E95A5"/>
+  <SolidColorBrush x:Key="Stroke" Color="#14FFFFFF"/>
+  <SolidColorBrush x:Key="Stroke2" Color="#24FFFFFF"/>
+  <SolidColorBrush x:Key="Hover" Color="#10FFFFFF"/>
+  <SolidColorBrush x:Key="Press" Color="#08FFFFFF"/>
+  <SolidColorBrush x:Key="Accent" Color="#8E97FF"/>
+  <SolidColorBrush x:Key="AccentSoft" Color="#268E97FF"/>
+  <SolidColorBrush x:Key="AccentText" Color="#0E1030"/>
+  <LinearGradientBrush x:Key="AccentGradient" StartPoint="0,0" EndPoint="1,1">
+    <GradientStop Color="#6F79F0" Offset="0"/>
+    <GradientStop Color="#9C7CFF" Offset="1"/>
+  </LinearGradientBrush>
+  <SolidColorBrush x:Key="Ok" Color="#5BD38B"/>
+  <SolidColorBrush x:Key="Warn" Color="#F2C14E"/>
+  <SolidColorBrush x:Key="WarnBg" Color="#3A2F12"/>
+  <SolidColorBrush x:Key="Err" Color="#FF8B82"/>
+  <SolidColorBrush x:Key="Busy" Color="#8E97FF"/>
+  <SolidColorBrush x:Key="BadgeText" Color="#15171C"/>
+  <SolidColorBrush x:Key="P1" Color="#7FB2FF"/>
+  <SolidColorBrush x:Key="P2" Color="#F08A72"/>
+  <SolidColorBrush x:Key="P3" Color="#D58BD0"/>
+  <SolidColorBrush x:Key="P4" Color="#4FC3C3"/>
+  <SolidColorBrush x:Key="P5" Color="#A9C85A"/>
+  <SolidColorBrush x:Key="P6" Color="#E8B04B"/>
+  <SolidColorBrush x:Key="P7" Color="#A39BFF"/>
+  <SolidColorBrush x:Key="P8" Color="#F28BB0"/>
+  <SolidColorBrush x:Key="P9" Color="#9FB0C0"/>
+  <SolidColorBrush x:Key="P10" Color="#C79A74"/>
+  <Color x:Key="ShadowColor">#000000</Color>
+  <sys:Double xmlns:sys="clr-namespace:System;assembly=mscorlib" x:Key="CardShadowOpacity">0.45</sys:Double>
+</ResourceDictionary>

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multipane</title>
+<meta name="description" content="One window for all your Claude Desktop profiles on Windows. Free, open source, no network calls.">
+<style>
+:root{--bg:#F3F4F8;--surface:#FFFFFF;--text:#15171C;--text2:#555C6B;--stroke:rgba(20,26,46,.12);--accent:#4A56D2;--accent2:#7B5BE8;--accent-text:#fff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111317;--surface:#1A1D24;--text:#F2F3F7;--text2:#AEB4C2;--stroke:rgba(255,255,255,.12);--accent:#8E97FF;--accent2:#9C7CFF;--accent-text:#0E1030}}
+:root[data-theme="dark"]{--bg:#111317;--surface:#1A1D24;--text:#F2F3F7;--text2:#AEB4C2;--stroke:rgba(255,255,255,.12);--accent:#8E97FF;--accent2:#9C7CFF;--accent-text:#0E1030}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;font-size:16px;line-height:1.5}
+main{max-width:960px;margin:0 auto;padding:64px 16px}
+.tile{width:72px;height:72px;border-radius:20px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;margin:0 auto}
+h1{font-size:40px;line-height:1.1;text-align:center;margin:24px 0 8px}
+.lead{text-align:center;color:var(--text2);max-width:620px;margin:0 auto}
+.row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:28px 0}
+a.btn{display:inline-flex;align-items:center;height:40px;padding:0 20px;border-radius:10px;background:var(--accent);color:var(--accent-text);text-decoration:none;font-weight:600}
+a.btn.alt{background:var(--surface);color:var(--text);border:1px solid var(--stroke)}
+img{width:100%;border-radius:12px;border:1px solid var(--stroke);margin:16px 0}
+h2{font-size:22px;margin:40px 0 8px}
+ul{padding-left:20px;color:var(--text2)}
+li{margin:6px 0}
+.note{font-size:14px;color:var(--text2);border-top:1px solid var(--stroke);padding-top:16px;margin-top:40px}
+</style>
+</head>
+<body>
+<main>
+  <div class="tile"><svg width="34" height="34" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="1.5" width="13" height="13" rx="3" fill="none" stroke="#fff" stroke-width="1.5"/><path d="M8 1.5v13M1.5 8h13" stroke="#fff" stroke-width="1.5"/></svg></div>
+  <h1>Multipane</h1>
+  <p class="lead">One window for all your Claude Desktop profiles on Windows. Tabs, columns, rows, grid or focus. Start, kill and reopen sessions. A crashed session stays put with a Reopen button.</p>
+  <div class="row">
+    <a class="btn" href="https://github.com/ReactRuler/multipane/releases/latest">Download</a>
+    <a class="btn alt" href="https://github.com/ReactRuler/multipane">Source on GitHub</a>
+  </div>
+  <img src="assets/shell-grid-dark.png" alt="Multipane in Grid view with four sessions, dark theme">
+  <h2>What it does</h2>
+  <ul>
+    <li>Uses the profiles the Claude Profile Switcher already created, where they are. No new sign-ins, nothing moved.</li>
+    <li>Hosts the running Claude windows inside one window, in the arrangement you pick, with one click to switch.</li>
+    <li>Pop a pane out and dock it back. Hide a session without killing it. Kill asks first and says what will stop.</li>
+    <li>Light and dark, follows Windows or your choice.</li>
+  </ul>
+  <h2>What it never does</h2>
+  <ul>
+    <li>No network access of any kind. No telemetry, no update check.</li>
+    <li>No reading of cookies, tokens or chats inside a Claude profile folder.</li>
+    <li>No code injection, no debugging ports. Only Electron's documented command-line switch and standard Windows APIs.</li>
+    <li>No admin rights, services or scheduled tasks.</li>
+  </ul>
+  <p>Every folder, registry key and API it touches is listed in <a href="https://github.com/ReactRuler/multipane/blob/main/docs/trust/what-this-app-touches.md">one page</a>, and <a href="https://github.com/ReactRuler/multipane/blob/main/SECURITY.md">SECURITY.md</a> says how to check it in under an hour.</p>
+  <img src="assets/shell-home-light.png" alt="The home page listing profiles with Open here, Start and Kill, light theme">
+  <p class="note">Multipane is an independent, open-source tool (MIT). It is not made by, affiliated with, or endorsed by Anthropic. Claude is a trademark of Anthropic, PBC. Using more than one Claude account is subject to Anthropic's terms of service. Built on the Claude Profile Switcher and claude-switcher projects.</p>
+</main>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<Window x:Class="HostingSpike.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:HostingSpike"
+        Title="Multipane" Icon="pack://application:,,,/Assets/app.ico" Width="1400" Height="820" MinWidth="720" MinHeight="420"
+        Background="{DynamicResource Mica}" Foreground="{DynamicResource Text}"
+        FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="14" UseLayoutRounding="True"
+        Loaded="OnLoaded" Closing="OnClosing" LocationChanged="OnMoved" StateChanged="OnStateChanged" PreviewKeyDown="OnKeyDown">
+  <WindowChrome.WindowChrome>
+    <!-- GlassFrameThickness stays 0: extending the frame makes DWM paint its own caption buttons under ours. -->
+    <WindowChrome CaptionHeight="44" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False"/>
+  </WindowChrome.WindowChrome>
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="44"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+
+    <!-- Title bar: one 40 px row in every mode. Left: name or tabs. Centre: mode switch. Right: Shown, memory, tools, window controls. -->
+    <Grid Grid.Row="0" SizeChanged="OnTitleBarSized" Margin="0,2,0,0">
+      <!-- three overlapping children so the segment is centred on the window, not between its neighbours -->
+      <StackPanel x:Name="LeftBar" Orientation="Horizontal" HorizontalAlignment="Left" ClipToBounds="True">
+      <Button x:Name="HomeButton" Style="{StaticResource TextButton}" Padding="6,0" Margin="6,0,0,0" Click="OnHome" ToolTip="Home · Ctrl+H" WindowChrome.IsHitTestVisibleInChrome="True">
+        <StackPanel Orientation="Horizontal">
+          <Border Width="20" Height="20" CornerRadius="6" Background="{DynamicResource AccentGradient}" VerticalAlignment="Center">
+            <Path Data="{StaticResource IconApp}" Stroke="White" StrokeThickness="1.6" Stretch="Uniform" Width="11" Height="11" StrokeLineJoin="Round"/>
+          </Border>
+          <TextBlock x:Name="AppName" Text="Home" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+        </StackPanel>
+      </Button>
+      <TextBlock x:Name="Summary" Text="" FontSize="12" Foreground="{DynamicResource Text2}" Margin="4,0,0,0" VerticalAlignment="Center"/>
+      <ItemsControl x:Name="Tabs" Margin="8,0,0,0" VerticalAlignment="Center" WindowChrome.IsHitTestVisibleInChrome="True">
+        <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <RadioButton Style="{StaticResource TabButton}" GroupName="tabs" IsChecked="{Binding Pane.IsActive, Mode=TwoWay}" Tag="{Binding Pane.ColorBrush}" Margin="0,0,4,0">
+              <Grid>
+                <StackPanel Orientation="Horizontal">
+                  <Border Width="18" Height="18" CornerRadius="9" Background="{Binding Pane.ColorBrush}">
+                    <TextBlock Text="{Binding Pane.Initials}" FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource BadgeText}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                  </Border>
+                  <TextBlock Text="{Binding Pane.ProfileName}" Margin="8,0,8,0" VerticalAlignment="Center" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
+                  <Canvas Width="10" Height="10" VerticalAlignment="Center">
+                    <Path Data="{Binding Pane.GlyphFill}" Fill="{Binding Pane.StateBrush}"/>
+                    <Path Data="{Binding Pane.GlyphStroke}" Stroke="{Binding Pane.StateBrush}" StrokeThickness="1.5"/>
+                  </Canvas>
+                </StackPanel>
+              </Grid>
+            </RadioButton>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      </StackPanel>
+
+      <!-- centre: the mode switch, a pill -->
+      <Border x:Name="SegmentBox" Background="{DynamicResource Hover}" CornerRadius="15" Padding="2" HorizontalAlignment="Center" VerticalAlignment="Center" WindowChrome.IsHitTestVisibleInChrome="True">
+        <StackPanel Orientation="Horizontal">
+          <RadioButton x:Name="ModeTabs" Style="{StaticResource Segment}" Content="Tabs" Tag="{StaticResource IconTabs}" GroupName="mode" Checked="OnModeChecked" ToolTip="Tabs · Ctrl+1"/>
+          <RadioButton x:Name="ModeColumns" Style="{StaticResource Segment}" Content="Columns" Tag="{StaticResource IconColumns}" GroupName="mode" IsChecked="True" Checked="OnModeChecked" ToolTip="Columns · Ctrl+2" Margin="2,0,0,0"/>
+          <RadioButton x:Name="ModeRows" Style="{StaticResource Segment}" Content="Rows" Tag="{StaticResource IconRows}" GroupName="mode" Checked="OnModeChecked" ToolTip="Rows · Ctrl+3" Margin="2,0,0,0"/>
+          <RadioButton x:Name="ModeGrid" Style="{StaticResource Segment}" Content="Grid" Tag="{StaticResource IconGrid}" GroupName="mode" Checked="OnModeChecked" ToolTip="Grid · Ctrl+4" Margin="2,0,0,0"/>
+          <RadioButton x:Name="ModeFocus" Style="{StaticResource Segment}" Content="Focus" Tag="{StaticResource IconFocus}" GroupName="mode" Checked="OnModeChecked" ToolTip="Focus · Ctrl+5" Margin="2,0,0,0"/>
+        </StackPanel>
+      </Border>
+
+      <!-- right side -->
+      <StackPanel x:Name="RightBar" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" WindowChrome.IsHitTestVisibleInChrome="True">
+        <Button x:Name="ShownButton" Style="{StaticResource TextButton}" Click="OnShown" ToolTip="Shown profiles · Ctrl+Shift+H">
+          <StackPanel Orientation="Horizontal">
+            <Path Style="{StaticResource IconPath}" Data="{StaticResource IconEye}" StrokeThickness="1.3" Margin="0,0,6,0"/>
+            <TextBlock x:Name="ShownText" Text="Shown 0 of 0" VerticalAlignment="Center"/>
+            <Path Style="{StaticResource IconPath}" Data="{StaticResource IconChevron}" Width="10" Height="10" Stretch="Uniform" Margin="6,0,0,0"/>
+          </StackPanel>
+        </Button>
+        <StackPanel Orientation="Horizontal" Margin="10,0" VerticalAlignment="Center">
+          <Border Width="64" Height="4" CornerRadius="2" Background="{DynamicResource Stroke2}" VerticalAlignment="Center">
+            <Border x:Name="MemBar" Height="4" CornerRadius="2" Background="{DynamicResource Text3}" HorizontalAlignment="Left" Width="0"/>
+          </Border>
+          <TextBlock x:Name="MemText" Text="" FontSize="12" Foreground="{DynamicResource Text2}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+        </StackPanel>
+        <Button Style="{StaticResource IconButton}" Click="OnShown" ToolTip="Command palette · Ctrl+K (spike: opens the window picker)"><Path Style="{StaticResource IconPath}" Data="{StaticResource IconSearch}"/></Button>
+        <Button Style="{StaticResource IconButton}" Click="OnSettings" ToolTip="Spike settings" x:Name="SettingsButton">
+          <Path Style="{StaticResource IconPath}" Data="{StaticResource IconGear}"/>
+          <Button.ContextMenu>
+            <ContextMenu>
+              <MenuItem Header="How windows are hosted" IsEnabled="False"/>
+              <MenuItem x:Name="MenuModeB" Header="Keep each window on top of its pane (recommended)" IsCheckable="True" IsChecked="True" Click="OnApproach" ToolTip="Spike plan approach B: the window stays top-level, owned by Multipane, and is placed over the pane."/>
+              <MenuItem x:Name="MenuModeA" Header="Embed each window inside its pane" IsCheckable="True" Click="OnApproach" ToolTip="Spike plan approach A: the window becomes a child of the pane. Fallback if B fails on some rows."/>
+              <MenuItem x:Name="MenuToolWindow" Header="Hide hosted windows from Alt+Tab" IsCheckable="True" IsChecked="True" ToolTip="Adds the tool-window style so Alt+Tab shows one Multipane entry."/>
+              <Separator/>
+              <MenuItem Header="Appearance" IsEnabled="False"/>
+              <MenuItem x:Name="MenuThemeSystem" Header="Follow Windows" IsCheckable="True" Click="OnTheme" Tag="system"/>
+              <MenuItem x:Name="MenuThemeLight" Header="Light" IsCheckable="True" Click="OnTheme" Tag="light"/>
+              <MenuItem x:Name="MenuThemeDark" Header="Dark" IsCheckable="True" Click="OnTheme" Tag="dark"/>
+              <Separator/>
+              <MenuItem Header="Add an empty pane" Click="OnAddPane"/>
+              <MenuItem Header="Launch a profile…" Click="OnLaunchProfile"/>
+              <MenuItem Header="Release all" Click="OnReleaseAll"/>
+              <Separator/>
+              <MenuItem x:Name="MenuLog" Header="Show log" IsCheckable="True" Click="OnToggleLog"/>
+              <MenuItem Header="Open log folder" Click="OnOpenLogFolder"/>
+            </ContextMenu>
+          </Button.ContextMenu>
+        </Button>
+        <Rectangle Width="1" Height="16" Fill="{DynamicResource Stroke2}" Margin="6,0,2,0"/>
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Top" Height="40">
+          <Button Style="{StaticResource CaptionButton}" Content="&#xE921;" Click="OnMinimize" ToolTip="Minimise"/>
+          <Button x:Name="MaxButton" Style="{StaticResource CaptionButton}" Content="&#xE922;" Click="OnMaximize" ToolTip="Maximise"/>
+          <Button Style="{StaticResource CloseButton}" Content="&#xE8BB;" Click="OnClose" ToolTip="Close"/>
+        </StackPanel>
+      </StackPanel>
+    </Grid>
+
+    <!-- Panes -->
+    <Grid Grid.Row="1" x:Name="Area" Margin="3,3,3,3"/>
+
+    <!-- Home page: shown while there are no panes -->
+    <Border Grid.Row="1" x:Name="EmptyHint" Visibility="Collapsed" Margin="6,6,6,6" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1" CornerRadius="10">
+      <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Width="640" Margin="0,48">
+          <Border Width="72" Height="72" CornerRadius="20" Background="{DynamicResource AccentGradient}" HorizontalAlignment="Center">
+            <Border.Effect><DropShadowEffect BlurRadius="24" ShadowDepth="8" Opacity="0.25" Color="#4A56D2"/></Border.Effect>
+            <Path Data="{StaticResource IconApp}" Stroke="White" StrokeThickness="1.5" Stretch="Uniform" Width="34" Height="34" StrokeLineJoin="Round"/>
+          </Border>
+          <TextBlock Text="Multipane" FontSize="32" FontWeight="SemiBold" TextAlignment="Center" Margin="0,20,0,0"/>
+          <TextBlock Text="One window for your Claude profiles. Open a profile that is already running, start one, or add a new account." Foreground="{DynamicResource Text2}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,8,0,0"/>
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,24,0,0">
+            <Button x:Name="HomeBack" Style="{StaticResource BtnPrimary}" Content="Back to panes" Click="OnHome" Visibility="Collapsed" Margin="0,0,8,0"/>
+            <Button Style="{StaticResource BtnPrimary}" Content="Open a running profile" Click="OnShown"/>
+            <Button Style="{StaticResource Btn}" Content="Add account" Margin="8,0,0,0" Click="OnAddAccount"/>
+            <Button Style="{StaticResource Btn}" Content="Add an empty pane" Margin="8,0,0,0" Click="OnAddPane"/>
+          </StackPanel>
+          <TextBlock Text="YOUR PROFILES" FontSize="11" Foreground="{DynamicResource Text3}" Margin="0,40,0,6"/>
+          <Border BorderBrush="{DynamicResource Stroke}" BorderThickness="1" CornerRadius="10" Background="{DynamicResource Surface2}">
+            <ItemsControl x:Name="HomeProfiles">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Grid Height="52" Margin="12,0">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="Auto"/>
+                      <ColumnDefinition Width="*"/>
+                      <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Width="24" Height="24" CornerRadius="12" Background="{Binding Brush}" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Initials}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource BadgeText}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+                      <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                        <Border Background="{DynamicResource Hover}" CornerRadius="4" Padding="6,0" Margin="8,0,0,0" VerticalAlignment="Center" Visibility="{Binding OriginalVis}"><TextBlock Text="original" FontSize="11" Foreground="{DynamicResource Text2}"/></Border>
+                      </StackPanel>
+                      <StackPanel Orientation="Horizontal">
+                        <Canvas Width="10" Height="10" Margin="0,0,5,0" VerticalAlignment="Center">
+                          <Path Data="{Binding GlyphFill}" Fill="{Binding StatusBrush}"/>
+                          <Path Data="{Binding GlyphStroke}" Stroke="{Binding StatusBrush}" StrokeThickness="1.5"/>
+                        </Canvas>
+                        <TextBlock Text="{Binding Status}" FontSize="12" Foreground="{Binding StatusBrush}"/>
+                        <TextBlock Text="{Binding Detail}" FontSize="12" Foreground="{DynamicResource Text2}" Margin="6,0,0,0" TextTrimming="CharacterEllipsis"/>
+                      </StackPanel>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                      <Button Style="{StaticResource BtnPrimary}" Height="28" Padding="12,0" FontSize="12" Content="Open here" Tag="{Binding}" Click="OnRowOpen" Visibility="{Binding OpenVis}" Margin="0,0,6,0"/>
+                      <Button Style="{StaticResource BtnPrimary}" Height="28" Padding="12,0" FontSize="12" Content="Show window" Tag="{Binding}" Click="OnRowShow" Visibility="{Binding ShowVis}" Margin="0,0,6,0"/>
+                      <Button Style="{StaticResource Btn}" Height="28" Padding="12,0" FontSize="12" Content="Start" Tag="{Binding}" Click="OnRowStart" Visibility="{Binding StartVis}" Margin="0,0,6,0"/>
+                      <Button Style="{StaticResource Btn}" Height="28" Padding="12,0" FontSize="12" Content="Kill" Tag="{Binding}" Click="OnRowKill" Visibility="{Binding KillVis}" Margin="0,0,6,0"/>
+                      <Button Style="{StaticResource IconButton}" Width="28" Height="28" Tag="{Binding}" Click="OnRowMenu" ToolTip="More">
+                        <Path Style="{StaticResource IconPath}" Data="{StaticResource IconMore}" Fill="{DynamicResource Text2}" Stroke="{x:Null}" Width="14" Height="14" Stretch="Uniform"/>
+                        <Button.ContextMenu>
+                          <ContextMenu>
+                            <MenuItem Header="Show window / bring forward" Click="OnRowShow"/>
+                            <Separator/>
+                            <MenuItem Header="Rename" InputGestureText="F2" Click="OnRowRename"/>
+                            <MenuItem Header="Change colour" Click="OnRowColour"/>
+                            <MenuItem Header="Open data folder" Click="OnRowFolder"/>
+                            <Separator/>
+                            <MenuItem Header="Delete profile…" Click="OnRowDelete"/>
+                          </ContextMenu>
+                        </Button.ContextMenu>
+                      </Button>
+                    </StackPanel>
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </Border>
+          <TextBlock Text="Open here moves a running window into a pane; nothing restarts and nothing signs in again. Kill asks first. Delete sends the folder to the Recycle Bin and never touches the original account." FontSize="12" Foreground="{DynamicResource Text3}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,24,0,0"/>
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+
+    <!-- Window picker (stands in for the Shown menu and the command palette) -->
+    <Popup x:Name="Picker" PlacementTarget="{Binding ElementName=ShownButton}" Placement="Bottom" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+      <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Stroke2}" BorderThickness="1" CornerRadius="8" Padding="4" Margin="8" Width="420">
+        <Border.Effect><DropShadowEffect BlurRadius="24" ShadowDepth="6" Opacity="0.18"/></Border.Effect>
+        <StackPanel>
+          <TextBox x:Name="Filter" Margin="4" TextChanged="OnFilterChanged" ToolTip="Filter by title"/>
+          <TextBlock Text="CLAUDE INSTANCES" FontSize="11" Foreground="{DynamicResource Text3}" Margin="12,8,0,2"/>
+          <ListBox x:Name="Instances" BorderThickness="0" Background="Transparent" MaxHeight="150" MouseDoubleClick="OnPickDoubleClick" DisplayMemberPath="Text" Foreground="{DynamicResource Text}"/>
+          <TextBlock Text="OTHER WINDOWS" FontSize="11" Foreground="{DynamicResource Text3}" Margin="12,8,0,2"/>
+          <ListBox x:Name="Windows" BorderThickness="0" Background="Transparent" MaxHeight="150" MouseDoubleClick="OnPickDoubleClick" DisplayMemberPath="Text" Foreground="{DynamicResource Text}"/>
+          <TextBlock x:Name="HiddenHeader" Text="HIDDEN PANES" FontSize="11" Foreground="{DynamicResource Text3}" Margin="12,8,0,2"/>
+          <ListBox x:Name="HiddenPanes" BorderThickness="0" Background="Transparent" MaxHeight="100" MouseDoubleClick="OnShowHidden" DisplayMemberPath="ProfileName" Foreground="{DynamicResource Text}"/>
+          <Rectangle Height="1" Fill="{DynamicResource Stroke}" Margin="8,6"/>
+          <DockPanel Margin="4">
+            <Button DockPanel.Dock="Right" Style="{StaticResource BtnPrimary}" Content="Host in a new pane" Click="OnPickHost"/>
+            <TextBlock Text="Double-click a window to host it. Hosting strips its frame until released." FontSize="12" Foreground="{DynamicResource Text2}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="4,0,8,0"/>
+          </DockPanel>
+        </StackPanel>
+      </Border>
+    </Popup>
+
+    <TextBox Grid.Row="2" x:Name="Log" Height="140" Visibility="Collapsed" IsReadOnly="True" FontFamily="Consolas" FontSize="11" VerticalScrollBarVisibility="Auto" Margin="6,0,6,6" TextWrapping="NoWrap" VerticalContentAlignment="Top"/>
+  </Grid>
+</Window>

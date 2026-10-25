@@ -1,0 +1,22 @@
+name: Feature request
+description: Something Multipane should do
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you are trying to do
+      description: The situation, not the solution. "I run six profiles and..." helps more than "add a button".
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: How you imagine it working
+  - type: checkboxes
+    id: trust
+    attributes:
+      label: Trust rules
+      options:
+        - label: This would not need network access, reading inside a Claude profile folder, or code injection.
+          required: true

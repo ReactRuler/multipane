@@ -1,0 +1,10 @@
+bin/
+obj/
+*.user
+*.suo
+.vs/
+TestResults/
+*.log
+spikes/hosting/HostingSpike/selftest-*.txt
+dist/
+dist-next/

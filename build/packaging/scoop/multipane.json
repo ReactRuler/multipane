@@ -1,0 +1,27 @@
+{
+  "version": "0.1.0",
+  "description": "One window for all your Claude Desktop profiles: tabs, grid, focus, start, kill, reopen.",
+  "homepage": "https://github.com/ReactRuler/multipane",
+  "license": "MIT",
+  "architecture": {
+    "64bit": {
+      "url": "https://github.com/ReactRuler/multipane/releases/download/v0.1.0/Multipane-0.1.0-win-x64.zip",
+      "hash": "<sha256 from SHA256SUMS.txt>"
+    },
+    "arm64": {
+      "url": "https://github.com/ReactRuler/multipane/releases/download/v0.1.0/Multipane-0.1.0-win-arm64.zip",
+      "hash": "<sha256 from SHA256SUMS.txt>"
+    }
+  },
+  "bin": "Multipane.exe",
+  "shortcuts": [["Multipane.exe", "Multipane"]],
+  "checkver": "github",
+  "autoupdate": {
+    "architecture": {
+      "64bit": { "url": "https://github.com/ReactRuler/multipane/releases/download/v$version/Multipane-$version-win-x64.zip" },
+      "arm64": { "url": "https://github.com/ReactRuler/multipane/releases/download/v$version/Multipane-$version-win-arm64.zip" }
+    },
+    "hash": { "url": "$baseurl/SHA256SUMS.txt" }
+  },
+  "notes": "Submit to the scoop 'extras' bucket with a pull request after the first release; free."
+}

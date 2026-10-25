@@ -1,0 +1,41 @@
+name: Release
+
+# Only a tag like v0.1.0 on the default branch produces artefacts. The release is created as a draft;
+# the owner publishes it by hand after the manual checklist (docs/tech/10-test-plan.md).
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Publish x64 and arm64, framework-dependent single file
+        shell: pwsh
+        run: |
+          $v = "${{ github.ref_name }}".TrimStart('v')
+          foreach ($rid in @('win-x64','win-arm64')) {
+            dotnet publish spikes/hosting/HostingSpike -c Release -r $rid --self-contained false -p:PublishSingleFile=true -p:Version=$v -o "out/$rid" -nologo
+            Compress-Archive -Path "out/$rid/Multipane.exe" -DestinationPath "out/Multipane-$v-$rid.zip"
+          }
+          Get-ChildItem out/*.zip | ForEach-Object { "$((Get-FileHash $_ -Algorithm SHA256).Hash.ToLower())  $($_.Name)" } | Set-Content out/SHA256SUMS.txt
+          Get-Content out/SHA256SUMS.txt
+      - name: Build provenance attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: out/*.zip
+      - name: Draft the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          gh release create "${{ github.ref_name }}" out/*.zip out/SHA256SUMS.txt --draft --title "Multipane ${{ github.ref_name }}" --notes-file .github/release-notes.md

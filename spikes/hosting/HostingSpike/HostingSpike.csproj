@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Throw-away spike for docs/tech/02-hosting-spike-plan.md. Not part of the product build.
+       Targets net8.0 because that is the SDK on the spike machine; the product targets .NET 10. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>Multipane</AssemblyName>
+    <RootNamespace>HostingSpike</RootNamespace>
+    <DisableWinExeOutputInference>true</DisableWinExeOutputInference>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\app.ico" />
+  </ItemGroup>
+
+</Project>

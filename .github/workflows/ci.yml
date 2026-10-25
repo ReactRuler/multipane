@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Build the hosting spike (warnings are errors)
+        run: dotnet build spikes/hosting/HostingSpike -c Release -nologo
+      - name: Self-test on dummy windows
+        # The hosted runner has a desktop session, so the WPF spike can open windows. The check is informational
+        # until the product's own test projects exist; a failure here is reported, not fatal.
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $exe = "spikes/hosting/HostingSpike/bin/Release/net8.0-windows/Multipane.exe"
+          $p = Start-Process -FilePath $exe -ArgumentList "--selftest" -PassThru -Wait
+          Get-Content (Get-ChildItem "spikes/hosting/HostingSpike/bin/Release/net8.0-windows/selftest-*.txt" | Sort-Object LastWriteTime | Select-Object -Last 1).FullName
+          exit $p.ExitCode
+      - name: Keep the self-test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selftest
+          path: spikes/hosting/HostingSpike/bin/Release/net8.0-windows/selftest-*.txt
+          if-no-files-found: ignore
+      - name: No network code, no personal data in the repo
+        shell: pwsh
+        run: |
+          $hits = Select-String -Path (Get-ChildItem -Recurse -Include *.cs spikes, src -ErrorAction SilentlyContinue) -Pattern 'System\.Net|HttpClient|WebClient|Socket\(' | Where-Object { $_.Line -notmatch '^\s*//' }
+          if ($hits) { $hits; throw "network API reference found" }
+          $mail = Select-String -Path (Get-ChildItem -Recurse -Include *.md,*.cs,*.xaml,*.json docs, spikes, README.md -ErrorAction SilentlyContinue) -Pattern '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[a-z]{2,}'
+          if ($mail) { $mail; throw "email address found" }

@@ -1,0 +1,42 @@
+# winget manifest template. On the first release: copy the three documents below into
+# manifests/r/ReactRuler/Multipane/<version>/ in a fork of microsoft/winget-pkgs, fill in the
+# version, the zip URLs and the SHA-256 values from SHA256SUMS.txt, run `winget validate`, and open the pull request.
+# Submitting is free; `wingetcreate new <zip-url>` can generate the files too.
+
+# --- ReactRuler.Multipane.yaml (version manifest)
+# PackageIdentifier: ReactRuler.Multipane
+# PackageVersion: 0.1.0
+# DefaultLocale: en-US
+# ManifestType: version
+# ManifestVersion: 1.6.0
+
+# --- ReactRuler.Multipane.installer.yaml
+# PackageIdentifier: ReactRuler.Multipane
+# PackageVersion: 0.1.0
+# InstallerType: zip
+# NestedInstallerType: portable
+# NestedInstallerFiles:
+#   - RelativeFilePath: Multipane.exe
+#     PortableCommandAlias: multipane
+# Installers:
+#   - Architecture: x64
+#     InstallerUrl: https://github.com/ReactRuler/multipane/releases/download/v0.1.0/Multipane-0.1.0-win-x64.zip
+#     InstallerSha256: <from SHA256SUMS.txt>
+#   - Architecture: arm64
+#     InstallerUrl: https://github.com/ReactRuler/multipane/releases/download/v0.1.0/Multipane-0.1.0-win-arm64.zip
+#     InstallerSha256: <from SHA256SUMS.txt>
+# ManifestType: installer
+# ManifestVersion: 1.6.0
+
+# --- ReactRuler.Multipane.locale.en-US.yaml
+# PackageIdentifier: ReactRuler.Multipane
+# PackageVersion: 0.1.0
+# PackageLocale: en-US
+# Publisher: ReactRuler
+# PackageName: Multipane
+# License: MIT
+# ShortDescription: One window for all your Claude Desktop profiles: tabs, grid, focus, start, kill, reopen.
+# PackageUrl: https://github.com/ReactRuler/multipane
+# Tags: [claude, desktop, profiles, windows]
+# ManifestType: defaultLocale
+# ManifestVersion: 1.6.0
